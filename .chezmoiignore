@@ -2,6 +2,13 @@ README.md
 docs/**
 scripts/**
 
+# never manage secrets or machine-local state
+.bashrc.local
+.claude/.credentials.json
+.claude/settings.local.json
+.codex/auth.json
+.codex/.env
+
 {{ if ne .chezmoi.os "windows" }}
 Documents
 Documents/PowerShell/**

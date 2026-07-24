@@ -1,0 +1,33 @@
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+personality = "pragmatic"
+approvals_reviewer = "user"
+plan_mode_reasoning_effort = "xhigh"
+
+[features]
+ghost_commit = false
+undo = false
+memories = true
+
+[tui]
+status_line = ["model-with-reasoning", "context-remaining", "five-hour-limit", "weekly-limit", "run-state", "task-progress", "approval-mode"]
+status_line_use_colors = true
+terminal_title = ["thread-title", "project-name"]
+
+[plugins."clickup@openai-curated"]
+enabled = true
+
+[plugins."game-studio@openai-curated"]
+enabled = true
+
+[plugins."ponytail@ponytail"]
+enabled = true
+
+[model_providers.sakana]
+name = "Sakana API"
+base_url = "https://api.sakana.ai/v1"
+env_key = "SAKANA_API_KEY"
+wire_api = "responses"
+stream_idle_timeout_ms = 7200000
+stream_max_retries = 5
+request_max_retries = 4

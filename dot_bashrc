@@ -33,5 +33,16 @@ if command -v oh-my-posh >/dev/null 2>&1; then
     eval "$(oh-my-posh init bash --config atomic)"
 fi
 
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+# Codex installer
+[ -d "$HOME/.local/bin" ] && export PATH="$HOME/.local/bin:$PATH"
+
+# opencode
+[ -d "$HOME/.opencode/bin" ] && export PATH="$HOME/.opencode/bin:$PATH"
+
+# Machine-local secrets and overrides; never tracked by chezmoi.
+[ -f "$HOME/.bashrc.local" ] && . "$HOME/.bashrc.local"
+
 # inshellisense must stay last so its shell runtime can own the suggestion UI.
 [ -f ~/.inshellisense/init/bash/init.sh ] && source ~/.inshellisense/init/bash/init.sh
