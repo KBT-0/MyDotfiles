@@ -62,7 +62,7 @@ Want the full WSL/Linux setup or just one tool? Run a single script.
 | Oh My Posh | Prompt theming | `install-ohmyposh.*` |
 | lf | Terminal file manager with `lfcd` shell integration | `install-lf.*` |
 | Zsh plugins | Autosuggestions and syntax highlighting for Linux/macOS | `install-zsh-plugins.sh` |
-| Atuin | Default Linux/macOS shell history search on Ctrl-R | `install-atuin.sh` |
+| Atuin | Default Linux/macOS shell history search on Ctrl-R and Up Arrow | `install-atuin.sh` |
 | Shell prediction menus | Optional IDE-style below-prompt suggestions via `inshellisense` | `install-shell-predictions.*` |
 | PowerShell predictions | Optional PowerShell-native `PSReadLine` ListView suggestions | `install-psreadline-predictions.ps1` |
 
@@ -153,12 +153,13 @@ Shell history/prediction defaults:
 - PowerShell/Windows: `inshellisense` shell plugin
 - Zsh on WSL/Linux and macOS: history-only grey suggestions via
   `zsh-autosuggestions`, command highlighting via `zsh-syntax-highlighting`,
-  and Atuin search on `Ctrl-R`
+  and Atuin search on `Ctrl-R` and Up Arrow
 
-Atuin is initialized with `--disable-up-arrow`, so Up Arrow remains under
-Zsh's control. `zsh-syntax-highlighting` is sourced last so it can wrap all ZLE
-widgets created by Atuin and zsh-autosuggestions. Oh My Posh, lfcd, Atuin, and
-both Zsh plugins share the same managed `.zshrc`.
+Atuin owns both `Ctrl-R` and Up Arrow for its richer history search. Grey inline
+suggestions remain available through `zsh-autosuggestions` and can be accepted
+with Right Arrow, End, or Shift+Tab. `zsh-syntax-highlighting` is sourced last
+so it can wrap all ZLE widgets created by Atuin and zsh-autosuggestions. Oh My
+Posh, lfcd, Atuin, and both Zsh plugins share the same managed `.zshrc`.
 
 On WSL/Linux, `install-shell-predictions.sh` remains an optional alternative.
 It installs `inshellisense` and writes the machine-local selection to

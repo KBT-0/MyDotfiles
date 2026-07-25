@@ -59,7 +59,7 @@ if [ "$mydotfiles_history_backend" = "inshellisense" ]; then
 else
     [ -d "$HOME/.atuin/bin" ] && PATH="$HOME/.atuin/bin:$PATH"
     if command -v atuin >/dev/null 2>&1; then
-        eval "$(atuin init bash --disable-up-arrow)"
+        eval "$(atuin init bash)"
     fi
 fi
 unset mydotfiles_history_backend
