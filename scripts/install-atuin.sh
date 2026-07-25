@@ -25,19 +25,10 @@ if [ ! -x "$ATUIN_BIN" ]; then
     exit 1
 fi
 
-# Atuin 18.17 and older use an external Bash preexec hook. Newer versions can
-# also use this file, so keeping it makes the integration work across versions.
-if [ ! -f "$HOME/.bash-preexec.sh" ]; then
-    echo "==> Installing the Bash preexec hook..."
-    curl --proto '=https' --tlsv1.2 -LsSf \
-        https://raw.githubusercontent.com/rcaloras/bash-preexec/master/bash-preexec.sh \
-        -o "$HOME/.bash-preexec.sh"
-fi
-
 mkdir -p "$(dirname "$BACKEND_FILE")"
 printf '%s\n' "atuin" > "$BACKEND_FILE"
 
 echo ""
 echo "==> Done. Atuin is selected on this machine: $("$ATUIN_BIN" --version)"
-echo "==> Restart your shell. Ctrl-R and Up Arrow will open Atuin history search."
+echo "==> Restart your shell. Atuin will use ble.sh when it is installed."
 echo "==> Existing history can be imported later with: atuin import auto"

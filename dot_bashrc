@@ -11,6 +11,23 @@ if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]; then
 fi
 export PATH
 
+# Line editors and interactive hooks must not run in scripts or CI shells.
+[[ $- == *i* ]] || return
+
+# Atuin + ble.sh is the default Bash stack. The optional inshellisense
+# installer writes a machine-local alternative without modifying dotfiles.
+mydotfiles_history_backend="atuin"
+if [ -r "$HOME/.config/shell/history-backend" ]; then
+    IFS= read -r mydotfiles_history_backend < "$HOME/.config/shell/history-backend"
+fi
+
+# Load ble.sh before prompt and Atuin hooks, then attach it at the very end.
+if [[ $- == *i* ]] &&
+    [ "$mydotfiles_history_backend" = "atuin" ] &&
+    [ -r "$HOME/.local/share/blesh/ble.sh" ]; then
+    source -- "$HOME/.local/share/blesh/ble.sh" --attach=none
+fi
+
 # Uncomment the following line if you don't like systemctl's auto-paging feature:
 # export SYSTEMD_PAGER=
 
@@ -44,20 +61,13 @@ fi
 # Machine-local secrets and overrides; never tracked by chezmoi.
 [ -f "$HOME/.bashrc.local" ] && . "$HOME/.bashrc.local"
 
-# Atuin is the default WSL/Linux history UI. The optional inshellisense
-# installer changes this machine-local preference without modifying dotfiles.
-mydotfiles_history_backend="atuin"
-if [ -r "$HOME/.config/shell/history-backend" ]; then
-    IFS= read -r mydotfiles_history_backend < "$HOME/.config/shell/history-backend"
-fi
-
 if [ "$mydotfiles_history_backend" = "inshellisense" ]; then
     [ -f "$HOME/.inshellisense/init/bash/init.sh" ] && . "$HOME/.inshellisense/init/bash/init.sh"
 else
     [ -d "$HOME/.atuin/bin" ] && PATH="$HOME/.atuin/bin:$PATH"
     if command -v atuin >/dev/null 2>&1; then
-        [ -f "$HOME/.bash-preexec.sh" ] && . "$HOME/.bash-preexec.sh"
-        eval "$(atuin init bash)"
+        eval "$(ATUIN_NO_BUILTIN_PREEXEC=1 atuin init bash)"
     fi
+    [[ ! ${BLE_VERSION-} ]] || ble-attach
 fi
 unset mydotfiles_history_backend

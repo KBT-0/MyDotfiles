@@ -26,18 +26,18 @@ install_base_packages() {
 
     if command -v dnf >/dev/null 2>&1; then
         run_root dnf update -y
-        run_root dnf install -y curl git zsh tar gzip unzip findutils gawk
+        run_root dnf install -y curl git zsh tar gzip unzip xz findutils gawk
     elif command -v apt-get >/dev/null 2>&1; then
         run_root apt-get update
-        run_root apt-get install -y ca-certificates curl git zsh tar gzip unzip findutils gawk
+        run_root apt-get install -y ca-certificates curl git zsh tar gzip unzip xz-utils findutils gawk
     elif command -v pacman >/dev/null 2>&1; then
         run_root pacman -Syu --noconfirm
-        run_root pacman -S --needed --noconfirm curl git zsh tar gzip unzip findutils gawk
+        run_root pacman -S --needed --noconfirm curl git zsh tar gzip unzip xz findutils gawk
     elif command -v zypper >/dev/null 2>&1; then
         run_root zypper refresh
-        run_root zypper install -y curl git zsh tar gzip unzip findutils gawk
+        run_root zypper install -y curl git zsh tar gzip unzip xz findutils gawk
     else
-        echo "No supported package manager found. Need curl, git, zsh, tar, gzip, unzip, findutils, gawk." >&2
+        echo "No supported package manager found. Need curl, git, zsh, tar, gzip, unzip, xz, findutils, gawk." >&2
         exit 1
     fi
 }
@@ -84,6 +84,7 @@ main() {
 
     run_repo_script install-ohmyposh.sh
     run_repo_script install-lf.sh
+    run_repo_script install-blesh.sh
     run_repo_script install-atuin.sh
 
     echo "==> Re-applying dotfiles after tool installation..."
@@ -95,6 +96,7 @@ main() {
     echo "    oh-my-posh --version"
     echo "    lf -version"
     echo "    type lfcd"
+    echo "    test -r ~/.local/share/blesh/ble.sh"
     echo "    atuin --version"
     echo "    chezmoi status"
 }
