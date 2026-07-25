@@ -28,15 +28,26 @@ if command -v oh-my-posh >/dev/null 2>&1; then
     eval "$(oh-my-posh init zsh --config atomic)"
 fi
 
-# zsh-autosuggestions: inline grey suggestions from history (→ to accept)
-source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-ZSH_AUTOSUGGEST_STRATEGY=(history completion)
-bindkey '^[[Z' autosuggest-accept  # Shift+Tab to accept full suggestion
+# Homebrew-managed zsh helpers (macOS).
+if command -v brew >/dev/null 2>&1; then
+    brew_prefix="$(brew --prefix)"
 
-# zsh-history-substring-search: type prefix + ↑/↓ to walk through matching history
-source $(brew --prefix)/share/zsh-history-substring-search/zsh-history-substring-search.zsh
-bindkey '^[[A' history-substring-search-up
-bindkey '^[[B' history-substring-search-down
+    # zsh-autosuggestions: inline grey suggestions from history (→ to accept)
+    if [ -r "$brew_prefix/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
+        source "$brew_prefix/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+        ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+        bindkey '^[[Z' autosuggest-accept  # Shift+Tab to accept full suggestion
+    fi
+
+    # zsh-history-substring-search: prefix + ↑/↓ to walk matching history
+    if [ -r "$brew_prefix/share/zsh-history-substring-search/zsh-history-substring-search.zsh" ]; then
+        source "$brew_prefix/share/zsh-history-substring-search/zsh-history-substring-search.zsh"
+        bindkey '^[[A' history-substring-search-up
+        bindkey '^[[B' history-substring-search-down
+    fi
+
+    unset brew_prefix
+fi
 
 # Larger history file + share between sessions
 HISTSIZE=50000
@@ -48,5 +59,24 @@ setopt HIST_IGNORE_ALL_DUPS
 setopt HIST_FIND_NO_DUPS
 setopt HIST_REDUCE_BLANKS
 
-# inshellisense must stay last so its shell runtime can own the suggestion UI.
-[[ -f ~/.inshellisense/init/zsh/init.zsh ]] && source ~/.inshellisense/init/zsh/init.zsh
+# Atuin is the default on WSL/Linux. macOS keeps inshellisense unless a local
+# backend preference was written by one of the installers.
+if [[ "$(uname -s)" == "Linux" ]]; then
+    mydotfiles_history_backend="atuin"
+else
+    mydotfiles_history_backend="inshellisense"
+fi
+
+if [[ -r "$HOME/.config/shell/history-backend" ]]; then
+    IFS= read -r mydotfiles_history_backend < "$HOME/.config/shell/history-backend"
+fi
+
+if [[ "$mydotfiles_history_backend" == "inshellisense" ]]; then
+    [[ -f "$HOME/.inshellisense/init/zsh/init.zsh" ]] && source "$HOME/.inshellisense/init/zsh/init.zsh"
+else
+    [[ -d "$HOME/.atuin/bin" ]] && path=("$HOME/.atuin/bin" $path)
+    if command -v atuin >/dev/null 2>&1; then
+        eval "$(atuin init zsh)"
+    fi
+fi
+unset mydotfiles_history_backend

@@ -33,7 +33,7 @@ This installs PowerShell 7, Windows Terminal, chezmoi, Oh My Posh, lf + lfcd, an
 curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/bootstrap-wsl.sh | bash
 ```
 
-This installs base packages, chezmoi, the dotfiles, Oh My Posh, lf + lfcd, and shell prediction menus.
+This installs base packages, chezmoi, the dotfiles, Oh My Posh, lf + lfcd, and Atuin history search.
 
 ### macOS
 
@@ -56,7 +56,8 @@ Want the full WSL/Linux setup or just one tool? Run a single script.
 | macOS Bootstrap | Full macOS setup | `bootstrap-macos.sh` |
 | Oh My Posh | Prompt theming | `install-ohmyposh.*` |
 | lf | Terminal file manager with `lfcd` shell integration | `install-lf.*` |
-| Shell prediction menus | Default IDE-style below-prompt suggestions via `inshellisense` | `install-shell-predictions.*` |
+| Atuin | Default WSL/Linux shell history search | `install-atuin.sh` |
+| Shell prediction menus | Optional IDE-style below-prompt suggestions via `inshellisense` | `install-shell-predictions.*` |
 | PowerShell predictions | Optional PowerShell-native `PSReadLine` ListView suggestions | `install-psreadline-predictions.ps1` |
 
 ### One-line installers
@@ -73,7 +74,10 @@ curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/insta
 # lf file manager
 curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-lf.sh | bash
 
-# Live shell prediction menus
+# Default Atuin history search
+curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-atuin.sh | bash
+
+# Optional inshellisense prediction menus (selects it on this machine)
 curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-shell-predictions.sh | bash
 ```
 
@@ -124,6 +128,7 @@ dotfiles/
 │   ├── install-ohmyposh.sh
 │   ├── install-lf.ps1
 │   ├── install-lf.sh
+│   ├── install-atuin.sh
 │   ├── install-shell-predictions.ps1
 │   ├── install-shell-predictions.sh
 │   ├── install-psreadline-predictions.ps1
@@ -133,11 +138,17 @@ dotfiles/
 
 Oh My Posh uses the built-in `atomic` theme on PowerShell, bash, and zsh.
 
-Live below-prompt command suggestions default to `inshellisense` on every supported OS:
+Shell history/prediction defaults:
 
-- PowerShell: `inshellisense` shell plugin
-- Bash/Linux: `inshellisense` shell plugin
+- PowerShell/Windows: `inshellisense` shell plugin
+- Bash or Zsh on WSL/Linux: Atuin history search
 - Zsh/macOS: `inshellisense` shell plugin
+
+On WSL/Linux, `install-shell-predictions.sh` remains an optional alternative.
+It installs `inshellisense` and writes the machine-local selection to
+`~/.config/shell/history-backend`. Run `install-atuin.sh` to switch back. A
+normal `chezmoi update` migrates existing WSL installs to Atuin once; it
+disables the inshellisense shell hook but does not uninstall the package.
 
 On Windows, `PSReadLine` ListView is still available as an optional alternative. The prediction installers are intentionally mutually exclusive:
 
@@ -189,11 +200,11 @@ git add . && git commit -m "tweak zsh" && git push
 - chezmoi: https://github.com/twpayne/chezmoi
 - Oh My Posh: https://github.com/JanDeDobbeleer/oh-my-posh
 - lf: https://github.com/gokcehan/lf
+- atuin: https://github.com/atuinsh/atuin
 - inshellisense: https://github.com/microsoft/inshellisense
 - PSReadLine: https://github.com/PowerShell/PSReadLine
 - Starship: https://github.com/starship/starship
 - fzf: https://github.com/junegunn/fzf
-- atuin: https://github.com/atuinsh/atuin
 
 ---
 

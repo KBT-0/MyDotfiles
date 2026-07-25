@@ -44,5 +44,20 @@ fi
 # Machine-local secrets and overrides; never tracked by chezmoi.
 [ -f "$HOME/.bashrc.local" ] && . "$HOME/.bashrc.local"
 
-# inshellisense must stay last so its shell runtime can own the suggestion UI.
-[ -f ~/.inshellisense/init/bash/init.sh ] && source ~/.inshellisense/init/bash/init.sh
+# Atuin is the default WSL/Linux history UI. The optional inshellisense
+# installer changes this machine-local preference without modifying dotfiles.
+mydotfiles_history_backend="atuin"
+if [ -r "$HOME/.config/shell/history-backend" ]; then
+    IFS= read -r mydotfiles_history_backend < "$HOME/.config/shell/history-backend"
+fi
+
+if [ "$mydotfiles_history_backend" = "inshellisense" ]; then
+    [ -f "$HOME/.inshellisense/init/bash/init.sh" ] && . "$HOME/.inshellisense/init/bash/init.sh"
+else
+    [ -d "$HOME/.atuin/bin" ] && PATH="$HOME/.atuin/bin:$PATH"
+    if command -v atuin >/dev/null 2>&1; then
+        [ -f "$HOME/.bash-preexec.sh" ] && . "$HOME/.bash-preexec.sh"
+        eval "$(atuin init bash)"
+    fi
+fi
+unset mydotfiles_history_backend

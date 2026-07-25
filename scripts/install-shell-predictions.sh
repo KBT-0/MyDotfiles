@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install the IDE-style below-prompt suggestion runtime used by Bash/Zsh.
+# Install and select the optional inshellisense runtime for Bash/Zsh.
 
 set -euo pipefail
 
@@ -181,5 +181,9 @@ if command -v zsh >/dev/null 2>&1; then
     "$IS_BIN" init zsh >/dev/null
 fi
 
+mkdir -p "$HOME/.config/shell"
+printf '%s\n' "inshellisense" > "$HOME/.config/shell/history-backend"
+
 echo ""
-echo "==> Done. Re-run chezmoi apply and restart your shell."
+echo "==> Done. inshellisense is selected on this machine."
+echo "==> Restart your shell. Run scripts/install-atuin.sh to switch back to Atuin."

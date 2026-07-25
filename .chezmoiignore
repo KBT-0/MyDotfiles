@@ -4,6 +4,7 @@ scripts/**
 
 # never manage secrets or machine-local state
 .bashrc.local
+.config/shell/history-backend
 .claude/.credentials.json
 .claude/settings.local.json
 .codex/auth.json

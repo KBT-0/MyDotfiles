@@ -1,0 +1,12 @@
+{{ if and (eq .chezmoi.os "linux") (contains "microsoft" (lower .chezmoi.kernel.osrelease)) -}}
+#!/usr/bin/env bash
+# Migrate existing WSL installs from inshellisense to the default Atuin backend.
+
+set -euo pipefail
+
+bash "{{ .chezmoi.sourceDir }}/scripts/install-atuin.sh"
+{{ else -}}
+#!/bin/sh
+# Atuin auto-migration is limited to WSL.
+exit 0
+{{ end -}}
