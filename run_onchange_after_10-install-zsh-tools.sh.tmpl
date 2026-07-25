@@ -1,0 +1,26 @@
+{{ if eq .chezmoi.os "linux" -}}
+#!/usr/bin/env bash
+# Install the default Zsh plugins + Atuin stack on existing Linux environments.
+
+set -euo pipefail
+
+bash "{{ .chezmoi.sourceDir }}/scripts/install-zsh-plugins.sh"
+bash "{{ .chezmoi.sourceDir }}/scripts/install-atuin.sh"
+
+zsh_bin="$(command -v zsh)"
+current_shell="$(getent passwd "$(id -un)" | cut -d: -f7)"
+if [ "$current_shell" != "$zsh_bin" ]; then
+    echo "==> Setting the default shell to $zsh_bin..."
+    if [ "$(id -u)" -eq 0 ]; then
+        chsh -s "$zsh_bin" "$(id -un)"
+    elif command -v sudo >/dev/null 2>&1; then
+        sudo chsh -s "$zsh_bin" "$(id -un)"
+    else
+        chsh -s "$zsh_bin"
+    fi
+fi
+{{ else -}}
+#!/bin/sh
+# Linux-only Zsh migration.
+exit 0
+{{ end -}}

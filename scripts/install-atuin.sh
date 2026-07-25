@@ -30,5 +30,5 @@ printf '%s\n' "atuin" > "$BACKEND_FILE"
 
 echo ""
 echo "==> Done. Atuin is selected on this machine: $("$ATUIN_BIN" --version)"
-echo "==> Restart your shell. Atuin will use ble.sh when it is installed."
+echo "==> Restart your shell. Ctrl-R will open Atuin history search."
 echo "==> Existing history can be imported later with: atuin import auto"

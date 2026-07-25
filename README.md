@@ -7,7 +7,7 @@ Cross-platform development environment configs managed with [chezmoi](https://ch
 **Supported platforms:**
 - 🪟 Windows (PowerShell 7)
 - 🍎 macOS (zsh)
-- 🐧 Linux (bash) — WSL Fedora, Debian VPS
+- 🐧 Linux (zsh) — WSL Fedora, Debian VPS
 
 ---
 
@@ -34,13 +34,17 @@ curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/boots
 ```
 
 This installs base packages, chezmoi, the dotfiles, Oh My Posh, lf + lfcd,
-ble.sh completion/editing, and Atuin history search.
+zsh-autosuggestions, zsh-syntax-highlighting, and Atuin history search. It also
+sets zsh as the default shell.
 
 ### macOS
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/bootstrap-macos.sh | bash
 ```
+
+This installs the same zsh-autosuggestions + zsh-syntax-highlighting stack,
+Atuin history search, Oh My Posh, and lf + lfcd.
 
 ---
 
@@ -57,8 +61,8 @@ Want the full WSL/Linux setup or just one tool? Run a single script.
 | macOS Bootstrap | Full macOS setup | `bootstrap-macos.sh` |
 | Oh My Posh | Prompt theming | `install-ohmyposh.*` |
 | lf | Terminal file manager with `lfcd` shell integration | `install-lf.*` |
-| ble.sh | Default WSL/Linux Bash completion and line editor | `install-blesh.sh` |
-| Atuin | Default WSL/Linux shell history search, integrated with ble.sh on Bash | `install-atuin.sh` |
+| Zsh plugins | Autosuggestions and syntax highlighting for Linux/macOS | `install-zsh-plugins.sh` |
+| Atuin | Default Linux/macOS shell history search on Ctrl-R | `install-atuin.sh` |
 | Shell prediction menus | Optional IDE-style below-prompt suggestions via `inshellisense` | `install-shell-predictions.*` |
 | PowerShell predictions | Optional PowerShell-native `PSReadLine` ListView suggestions | `install-psreadline-predictions.ps1` |
 
@@ -76,8 +80,8 @@ curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/insta
 # lf file manager
 curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-lf.sh | bash
 
-# ble.sh Bash completion and line editing
-curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-blesh.sh | bash
+# zsh-autosuggestions + zsh-syntax-highlighting
+curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-zsh-plugins.sh | bash
 
 # Default Atuin history search
 curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-atuin.sh | bash
@@ -133,7 +137,7 @@ dotfiles/
 │   ├── install-ohmyposh.sh
 │   ├── install-lf.ps1
 │   ├── install-lf.sh
-│   ├── install-blesh.sh
+│   ├── install-zsh-plugins.sh
 │   ├── install-atuin.sh
 │   ├── install-shell-predictions.ps1
 │   ├── install-shell-predictions.sh
@@ -147,21 +151,21 @@ Oh My Posh uses the built-in `atomic` theme on PowerShell, bash, and zsh.
 Shell history/prediction defaults:
 
 - PowerShell/Windows: `inshellisense` shell plugin
-- Bash on WSL/Linux: ble.sh completion/editing + Atuin history search
-- Zsh on WSL/Linux: Atuin history search (Zsh already has its own line editor)
-- Zsh/macOS: `inshellisense` shell plugin
+- Zsh on WSL/Linux and macOS: history-only grey suggestions via
+  `zsh-autosuggestions`, command highlighting via `zsh-syntax-highlighting`,
+  and Atuin search on `Ctrl-R`
 
-On Bash, ble.sh is loaded first without attaching; Atuin then registers its
-history hooks through ble.sh, and ble.sh attaches after the remaining prompt
-configuration. This avoids competing line editors and gives Atuin the more
-accurate ble.sh preexec backend.
+Atuin is initialized with `--disable-up-arrow`, so Up Arrow remains under
+Zsh's control. `zsh-syntax-highlighting` is sourced last so it can wrap all ZLE
+widgets created by Atuin and zsh-autosuggestions. Oh My Posh, lfcd, Atuin, and
+both Zsh plugins share the same managed `.zshrc`.
 
 On WSL/Linux, `install-shell-predictions.sh` remains an optional alternative.
 It installs `inshellisense` and writes the machine-local selection to
-`~/.config/shell/history-backend`. In that mode neither ble.sh nor Atuin is
-loaded in Bash, so the interfaces do not compete. Run `install-atuin.sh` to
-switch back. The first normal `chezmoi update` after this change
-installs/refreshes ble.sh and migrates existing WSL installs to Atuin; it
+`~/.config/shell/history-backend`. In that mode neither the Zsh plugins nor
+Atuin is loaded, so the interfaces do not compete. Run `install-atuin.sh` to
+switch back. A normal `chezmoi update` installs/refreshes the Zsh plugins and
+migrates existing WSL installs to Atuin; it
 disables the inshellisense shell hook but does not uninstall the package.
 
 On Windows, `PSReadLine` ListView is still available as an optional alternative. The prediction installers are intentionally mutually exclusive:
@@ -214,7 +218,8 @@ git add . && git commit -m "tweak zsh" && git push
 - chezmoi: https://github.com/twpayne/chezmoi
 - Oh My Posh: https://github.com/JanDeDobbeleer/oh-my-posh
 - lf: https://github.com/gokcehan/lf
-- ble.sh: https://github.com/akinomyoga/ble.sh
+- zsh-autosuggestions: https://github.com/zsh-users/zsh-autosuggestions
+- zsh-syntax-highlighting: https://github.com/zsh-users/zsh-syntax-highlighting
 - atuin: https://github.com/atuinsh/atuin
 - inshellisense: https://github.com/microsoft/inshellisense
 - PSReadLine: https://github.com/PowerShell/PSReadLine

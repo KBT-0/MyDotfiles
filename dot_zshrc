@@ -28,27 +28,6 @@ if command -v oh-my-posh >/dev/null 2>&1; then
     eval "$(oh-my-posh init zsh --config atomic)"
 fi
 
-# Homebrew-managed zsh helpers (macOS).
-if command -v brew >/dev/null 2>&1; then
-    brew_prefix="$(brew --prefix)"
-
-    # zsh-autosuggestions: inline grey suggestions from history (→ to accept)
-    if [ -r "$brew_prefix/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
-        source "$brew_prefix/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
-        ZSH_AUTOSUGGEST_STRATEGY=(history completion)
-        bindkey '^[[Z' autosuggest-accept  # Shift+Tab to accept full suggestion
-    fi
-
-    # zsh-history-substring-search: prefix + ↑/↓ to walk matching history
-    if [ -r "$brew_prefix/share/zsh-history-substring-search/zsh-history-substring-search.zsh" ]; then
-        source "$brew_prefix/share/zsh-history-substring-search/zsh-history-substring-search.zsh"
-        bindkey '^[[A' history-substring-search-up
-        bindkey '^[[B' history-substring-search-down
-    fi
-
-    unset brew_prefix
-fi
-
 # Larger history file + share between sessions
 HISTSIZE=50000
 SAVEHIST=50000
@@ -59,24 +38,40 @@ setopt HIST_IGNORE_ALL_DUPS
 setopt HIST_FIND_NO_DUPS
 setopt HIST_REDUCE_BLANKS
 
-# Atuin is the default on WSL/Linux. macOS keeps inshellisense unless a local
-# backend preference was written by one of the installers.
-if [[ "$(uname -s)" == "Linux" ]]; then
-    mydotfiles_history_backend="atuin"
-else
-    mydotfiles_history_backend="inshellisense"
-fi
-
+# Atuin + zsh-autosuggestions is the default on Linux and macOS.
+# The optional inshellisense installer writes a machine-local alternative.
+mydotfiles_history_backend="atuin"
 if [[ -r "$HOME/.config/shell/history-backend" ]]; then
     IFS= read -r mydotfiles_history_backend < "$HOME/.config/shell/history-backend"
 fi
 
 if [[ "$mydotfiles_history_backend" == "inshellisense" ]]; then
+    unset mydotfiles_history_backend
     [[ -f "$HOME/.inshellisense/init/zsh/init.zsh" ]] && source "$HOME/.inshellisense/init/zsh/init.zsh"
 else
     [[ -d "$HOME/.atuin/bin" ]] && path=("$HOME/.atuin/bin" $path)
+
+    # Fast, history-only grey suggestions. Right Arrow or End accepts them.
+    ZSH_AUTOSUGGEST_STRATEGY=(history)
+    ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+    if [[ -r "$HOME/.local/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+        source "$HOME/.local/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
+        bindkey '^[[Z' autosuggest-accept  # Shift+Tab accepts the full suggestion.
+    fi
+
+    # Atuin owns Ctrl-R only; Up Arrow remains available to Zsh.
     if command -v atuin >/dev/null 2>&1; then
-        eval "$(atuin init zsh)"
+        eval "$(atuin init zsh --disable-up-arrow)"
+    fi
+
+    # Atuin prepends its own autosuggestion strategy; keep grey suggestions
+    # strictly local and history-only as configured above.
+    ZSH_AUTOSUGGEST_STRATEGY=(history)
+
+    unset mydotfiles_history_backend
+
+    # Must remain the final sourced plugin so it can wrap every ZLE widget.
+    if [[ -r "$HOME/.local/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]]; then
+        source "$HOME/.local/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
     fi
 fi
-unset mydotfiles_history_backend

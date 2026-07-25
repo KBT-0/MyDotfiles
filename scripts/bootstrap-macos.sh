@@ -40,7 +40,7 @@ install_homebrew() {
 install_base_packages() {
     echo "==> Installing base packages..."
     brew update
-    brew install chezmoi git node zsh oh-my-posh lf zsh-autosuggestions zsh-history-substring-search
+    brew install chezmoi git zsh oh-my-posh lf
 }
 
 apply_dotfiles() {
@@ -86,7 +86,8 @@ main() {
 
     run_repo_script install-ohmyposh.sh
     run_repo_script install-lf.sh
-    run_repo_script install-shell-predictions.sh
+    run_repo_script install-zsh-plugins.sh
+    run_repo_script install-atuin.sh
     install_jetbrains_font
 
     echo "==> Re-applying dotfiles after tool installation..."
@@ -98,7 +99,9 @@ main() {
     echo "    oh-my-posh --version"
     echo "    lf -version"
     echo "    type lfcd"
-    echo "    command -v is && is doctor"
+    echo "    test -r ~/.local/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
+    echo "    test -r ~/.local/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+    echo "    atuin --version"
     echo "    chezmoi status"
 }
 
