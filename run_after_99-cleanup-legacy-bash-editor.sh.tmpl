@@ -1,0 +1,53 @@
+{{ if or (eq .chezmoi.os "linux") (eq .chezmoi.os "darwin") -}}
+#!/usr/bin/env bash
+# Remove the retired Bash editor only after every interactive Bash has exited.
+
+set -euo pipefail
+
+if [ -z "${HOME:-}" ] || [ "$HOME" = "/" ]; then
+    echo "Refusing to clean legacy shell files with an unsafe HOME." >&2
+    exit 1
+fi
+
+legacy_paths=(
+    "$HOME/.local/share/blesh"
+    "$HOME/.cache/blesh"
+    "$HOME/.local/state/blesh"
+    "$HOME/.config/blesh"
+)
+
+legacy_files_exist=false
+for legacy_path in "${legacy_paths[@]}"; do
+    if [ -e "$legacy_path" ] || [ -L "$legacy_path" ]; then
+        legacy_files_exist=true
+        break
+    fi
+done
+
+if [ "$legacy_files_exist" = false ]; then
+    exit 0
+fi
+
+if ! process_list="$(ps -eo tty=,comm= 2>/dev/null)"; then
+    echo "==> Legacy Bash editor cleanup deferred: could not inspect active shells."
+    exit 0
+fi
+
+if printf '%s\n' "$process_list" |
+    awk '$1 != "?" && ($2 == "bash" || $2 == "-bash" || $2 ~ /\/bash$/) { active = 1 } END { exit !active }'; then
+    echo "==> Legacy Bash editor cleanup deferred: an interactive Bash is still running."
+    echo "==> Run 'exec zsh', then run 'chezmoi apply' once more."
+    exit 0
+fi
+
+for legacy_path in "${legacy_paths[@]}"; do
+    if [ -e "$legacy_path" ] || [ -L "$legacy_path" ]; then
+        echo "==> Removing inactive legacy shell files: $legacy_path"
+        rm -rf -- "$legacy_path"
+    fi
+done
+{{ else -}}
+#!/bin/sh
+# Windows is handled by the PowerShell bootstrap.
+exit 0
+{{ end -}}

@@ -1,25 +1,8 @@
 {{ if or (eq .chezmoi.os "linux") (eq .chezmoi.os "darwin") -}}
 #!/usr/bin/env bash
-# Remove the legacy Bash line editor and install the Zsh + Atuin stack.
+# Install the Zsh + Atuin stack.
 
 set -euo pipefail
-
-if [ -z "${HOME:-}" ] || [ "$HOME" = "/" ]; then
-    echo "Refusing to clean legacy shell files with an unsafe HOME." >&2
-    exit 1
-fi
-
-for legacy_path in \
-    "$HOME/.local/share/blesh" \
-    "$HOME/.cache/blesh" \
-    "$HOME/.local/state/blesh" \
-    "$HOME/.config/blesh"; do
-    if [ -e "$legacy_path" ] || [ -L "$legacy_path" ]; then
-        echo "==> Removing legacy shell files: $legacy_path"
-        rm -rf -- "$legacy_path"
-    fi
-done
-unset legacy_path
 
 bash "{{ .chezmoi.sourceDir }}/scripts/install-zsh-plugins.sh"
 bash "{{ .chezmoi.sourceDir }}/scripts/install-atuin.sh"
