@@ -51,7 +51,8 @@ if [[ "$mydotfiles_history_backend" == "inshellisense" ]]; then
 else
     [[ -d "$HOME/.atuin/bin" ]] && path=("$HOME/.atuin/bin" $path)
 
-    # Fast, history-only grey suggestions. Right Arrow or End accepts them.
+    # Load the renderer with a temporary local strategy; Atuin becomes the
+    # sole suggestion source immediately after its integration is initialized.
     ZSH_AUTOSUGGEST_STRATEGY=(history)
     ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
     if [[ -r "$HOME/.local/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
@@ -64,9 +65,8 @@ else
         eval "$(atuin init zsh)"
     fi
 
-    # Atuin prepends its own autosuggestion strategy; keep grey suggestions
-    # strictly local and history-only as configured above.
-    ZSH_AUTOSUGGEST_STRATEGY=(history)
+    # zsh-autosuggestions renders the grey text; Atuin is its sole data source.
+    ZSH_AUTOSUGGEST_STRATEGY=(atuin)
 
     unset mydotfiles_history_backend
 

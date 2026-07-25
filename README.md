@@ -151,15 +151,16 @@ Oh My Posh uses the built-in `atomic` theme on PowerShell, bash, and zsh.
 Shell history/prediction defaults:
 
 - PowerShell/Windows: `inshellisense` shell plugin
-- Zsh on WSL/Linux and macOS: history-only grey suggestions via
+- Zsh on WSL/Linux and macOS: Atuin-backed grey suggestions rendered by
   `zsh-autosuggestions`, command highlighting via `zsh-syntax-highlighting`,
   and Atuin search on `Ctrl-R` and Up Arrow
 
 Atuin owns both `Ctrl-R` and Up Arrow for its richer history search. Grey inline
-suggestions remain available through `zsh-autosuggestions` and can be accepted
-with Right Arrow, End, or Shift+Tab. `zsh-syntax-highlighting` is sourced last
-so it can wrap all ZLE widgets created by Atuin and zsh-autosuggestions. Oh My
-Posh, lfcd, Atuin, and both Zsh plugins share the same managed `.zshrc`.
+suggestions use Atuin as their sole history source, with
+`zsh-autosuggestions` handling their display and acceptance through Right
+Arrow, End, or Shift+Tab. `zsh-syntax-highlighting` is sourced last so it can
+wrap all ZLE widgets created by Atuin and zsh-autosuggestions. Oh My Posh,
+lfcd, Atuin, and both Zsh plugins share the same managed `.zshrc`.
 
 On WSL/Linux, `install-shell-predictions.sh` remains an optional alternative.
 It installs `inshellisense` and writes the machine-local selection to
