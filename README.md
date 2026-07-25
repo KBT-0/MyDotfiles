@@ -156,7 +156,7 @@ Shell history/prediction defaults:
   and Atuin search on `Ctrl-R` and Up Arrow
 
 Atuin owns both `Ctrl-R` and Up Arrow for its richer history search. Grey inline
-suggestions use Atuin as their sole history source, with
+suggestions prefer Atuin's database and fall back to local Zsh history, with
 `zsh-autosuggestions` handling their display and acceptance through Right
 Arrow, End, or Shift+Tab. `zsh-syntax-highlighting` is sourced last so it can
 wrap all ZLE widgets created by Atuin and zsh-autosuggestions. Oh My Posh,
