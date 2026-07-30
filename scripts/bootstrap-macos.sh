@@ -40,7 +40,7 @@ install_homebrew() {
 install_base_packages() {
     echo "==> Installing base packages..."
     brew update
-    brew install chezmoi git zsh oh-my-posh lf
+    brew install chezmoi git zsh oh-my-posh lf jq
 }
 
 apply_dotfiles() {
@@ -67,6 +67,40 @@ run_repo_script() {
     fi
 }
 
+should_install_codexbar() {
+    local choice="${DOTFILES_INSTALL_CODEXBAR:-}"
+
+    case "$choice" in
+        1|true|TRUE|yes|YES|y|Y) return 0 ;;
+        0|false|FALSE|no|NO|n|N) return 1 ;;
+        "")
+            if [ ! -r /dev/tty ]; then
+                echo "==> Non-interactive shell: skipping optional CodexBar install."
+                return 1
+            fi
+
+            printf "==> Install optional CodexBar menu-bar app? [y/N] " > /dev/tty
+            IFS= read -r choice < /dev/tty || return 1
+            case "$choice" in
+                y|Y|yes|YES) return 0 ;;
+                *) return 1 ;;
+            esac
+            ;;
+        *)
+            echo "Invalid DOTFILES_INSTALL_CODEXBAR value: $choice (use 1 or 0)." >&2
+            return 1
+            ;;
+    esac
+}
+
+install_optional_codexbar() {
+    if should_install_codexbar; then
+        run_repo_script install-codexbar.sh
+    else
+        echo "==> Optional CodexBar install skipped."
+    fi
+}
+
 install_jetbrains_font() {
     echo "==> Installing JetBrainsMono Nerd Font..."
     if command -v oh-my-posh >/dev/null 2>&1; then
@@ -88,6 +122,7 @@ main() {
     run_repo_script install-lf.sh
     run_repo_script install-zsh-plugins.sh
     run_repo_script install-atuin.sh
+    install_optional_codexbar
     install_jetbrains_font
 
     echo "==> Re-applying dotfiles after tool installation..."

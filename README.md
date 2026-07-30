@@ -7,7 +7,7 @@ Cross-platform development environment configs managed with [chezmoi](https://ch
 **Supported platforms:**
 - 🪟 Windows (PowerShell 7)
 - 🍎 macOS (zsh)
-- 🐧 Linux (zsh) — WSL Fedora, Debian VPS
+- 🐧 Linux (zsh)
 
 ---
 
@@ -25,7 +25,10 @@ irm https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/bootstrap-wi
 
 Then open a new Windows Terminal PowerShell 7 tab and set the profile font to `JetBrainsMono Nerd Font`.
 
-This installs PowerShell 7, Windows Terminal, chezmoi, Oh My Posh, lf + lfcd, and `inshellisense` prediction menus.
+This installs PowerShell 7, Windows Terminal, chezmoi, Oh My Posh, lf + lfcd,
+and `inshellisense` prediction menus. It also asks whether to install the
+optional [Win-CodexBar](https://github.com/nesszer/Win-CodexBar) tray app;
+the default answer is no.
 
 ### WSL / Linux
 
@@ -35,7 +38,9 @@ curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/boots
 
 This installs base packages, chezmoi, the dotfiles, Oh My Posh, lf + lfcd,
 zsh-autosuggestions, zsh-syntax-highlighting, and Atuin history search. It also
-sets zsh as the default shell.
+sets zsh as the default shell. The Avenox Claude Code status line is included.
+If Waybar is already installed, the bootstrap asks whether to install the
+optional codexbar-waybar integration; the default answer is no.
 
 ### macOS
 
@@ -44,7 +49,13 @@ curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/boots
 ```
 
 This installs the same zsh-autosuggestions + zsh-syntax-highlighting stack,
-Atuin history search, Oh My Posh, and lf + lfcd.
+Atuin history search, Oh My Posh, lf + lfcd, and the Avenox Claude Code status
+line. It asks whether to install the optional CodexBar menu-bar app; the default
+answer is no.
+
+CodexBar prompts only run from the full bootstrap scripts. A normal
+`chezmoi update` never installs or updates CodexBar. For unattended bootstrap,
+set `DOTFILES_INSTALL_CODEXBAR=1` to opt in or `0` to skip the prompt.
 
 ---
 
@@ -63,6 +74,7 @@ Want the full WSL/Linux setup or just one tool? Run a single script.
 | lf | Terminal file manager with `lfcd` shell integration | `install-lf.*` |
 | Zsh plugins | Autosuggestions and syntax highlighting for Linux/macOS | `install-zsh-plugins.sh` |
 | Atuin | Default Linux/macOS shell history search on Ctrl-R and Up Arrow | `install-atuin.sh` |
+| CodexBar | Optional macOS app, Windows tray app, or Linux Waybar integration | `install-codexbar.*` |
 | Shell prediction menus | Optional IDE-style below-prompt suggestions via `inshellisense` | `install-shell-predictions.*` |
 | PowerShell predictions | Optional PowerShell-native `PSReadLine` ListView suggestions | `install-psreadline-predictions.ps1` |
 
@@ -88,6 +100,9 @@ curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/insta
 
 # Optional inshellisense prediction menus (selects it on this machine)
 curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-shell-predictions.sh | bash
+
+# Optional codexbar-waybar (only when Waybar is already installed)
+curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-codexbar.sh | bash
 ```
 
 **Windows (PowerShell):**
@@ -107,6 +122,9 @@ irm https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-shel
 
 # Optional PSReadLine ListView predictions instead of inshellisense
 irm https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-psreadline-predictions.ps1 | iex
+
+# Optional Win-CodexBar tray app
+irm https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-codexbar.ps1 | iex
 ```
 
 **macOS:**
@@ -114,6 +132,9 @@ irm https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-psre
 ```bash
 # Full macOS setup
 curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/bootstrap-macos.sh | bash
+
+# Optional CodexBar menu-bar app
+curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-codexbar.sh | bash
 ```
 
 ---
@@ -128,6 +149,8 @@ dotfiles/
 │   ├── dot_config/                # -> ~/.config/
 │   │   ├── shell/lfcd.sh
 │   │   └── starship.toml
+│   ├── dot_claude/                # Claude settings + Avenox status line
+│   ├── dot_codex/                 # Codex config, rules, and native status line
 │   └── AppData/                   # Windows-only files
 │       └── Local/...
 ├── scripts/                       # Standalone single-tool installers
@@ -139,6 +162,8 @@ dotfiles/
 │   ├── install-lf.sh
 │   ├── install-zsh-plugins.sh
 │   ├── install-atuin.sh
+│   ├── install-codexbar.ps1
+│   ├── install-codexbar.sh
 │   ├── install-shell-predictions.ps1
 │   ├── install-shell-predictions.sh
 │   ├── install-psreadline-predictions.ps1
@@ -177,6 +202,27 @@ On Windows, `PSReadLine` ListView is still available as an optional alternative.
 
 This only changes profile integration; it does not uninstall the other tool.
 
+### AI usage bars and status lines
+
+CodexBar is deliberately opt-in and independent of Chezmoi updates:
+
+- macOS installs the official CodexBar Homebrew cask when accepted.
+- Windows installs `Finesssee.Win-CodexBar` through Winget when accepted.
+- Linux offers codexbar-waybar only when `waybar` is already on `PATH`. Its
+  installer adds the module files and CSS, but intentionally leaves the final
+  `"custom/codexbar"` placement in the user's Waybar layout manual.
+
+Claude Code on Linux and macOS uses the vendored
+[Avenox status line](https://github.com/avenoxai/avenoxstatusline), refreshed
+every three seconds. It needs `bash`, `git`, and `jq`; the full Linux/macOS
+bootstraps install these dependencies. Native Windows is excluded because the
+upstream status line is documented and tested for macOS/Linux Bash.
+
+Codex cannot run the Avenox Claude `statusLine` command. It uses Codex's native
+`tui.status_line` configuration instead; this repo already enables model and
+reasoning, context remaining, five-hour and weekly limits, run/task state, and
+approval mode.
+
 ---
 
 ## Pull just one file with chezmoi
@@ -199,6 +245,9 @@ chezmoi update          # pull latest + apply
 chezmoi diff            # preview what would change
 chezmoi apply -v        # apply (verbose)
 ```
+
+These commands update the managed Avenox script, but they do not install or
+upgrade any optional CodexBar app or Waybar integration.
 
 ---
 
@@ -223,6 +272,10 @@ git add . && git commit -m "tweak zsh" && git push
 - zsh-autosuggestions: https://github.com/zsh-users/zsh-autosuggestions
 - zsh-syntax-highlighting: https://github.com/zsh-users/zsh-syntax-highlighting
 - atuin: https://github.com/atuinsh/atuin
+- CodexBar (macOS/CLI): https://github.com/steipete/CodexBar
+- Win-CodexBar: https://github.com/nesszer/Win-CodexBar
+- codexbar-waybar: https://github.com/Marouan-chak/codexbar-waybar
+- avenoxstatusline: https://github.com/avenoxai/avenoxstatusline
 - inshellisense: https://github.com/microsoft/inshellisense
 - PSReadLine: https://github.com/PowerShell/PSReadLine
 - Starship: https://github.com/starship/starship

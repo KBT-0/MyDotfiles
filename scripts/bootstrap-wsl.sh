@@ -26,18 +26,18 @@ install_base_packages() {
 
     if command -v dnf >/dev/null 2>&1; then
         run_root dnf update -y
-        run_root dnf install -y curl git zsh tar gzip unzip findutils gawk
+        run_root dnf install -y curl git zsh tar gzip unzip findutils gawk jq
     elif command -v apt-get >/dev/null 2>&1; then
         run_root apt-get update
-        run_root apt-get install -y ca-certificates curl git zsh tar gzip unzip findutils gawk
+        run_root apt-get install -y ca-certificates curl git zsh tar gzip unzip findutils gawk jq
     elif command -v pacman >/dev/null 2>&1; then
         run_root pacman -Syu --noconfirm
-        run_root pacman -S --needed --noconfirm curl git zsh tar gzip unzip findutils gawk
+        run_root pacman -S --needed --noconfirm curl git zsh tar gzip unzip findutils gawk jq
     elif command -v zypper >/dev/null 2>&1; then
         run_root zypper refresh
-        run_root zypper install -y curl git zsh tar gzip unzip findutils gawk
+        run_root zypper install -y curl git zsh tar gzip unzip findutils gawk jq
     else
-        echo "No supported package manager found. Need curl, git, zsh, tar, gzip, unzip, findutils, gawk." >&2
+        echo "No supported package manager found. Need curl, git, zsh, tar, gzip, unzip, findutils, gawk, jq." >&2
         exit 1
     fi
 }
@@ -77,6 +77,45 @@ run_repo_script() {
     fi
 }
 
+should_install_codexbar() {
+    local choice="${DOTFILES_INSTALL_CODEXBAR:-}"
+
+    case "$choice" in
+        1|true|TRUE|yes|YES|y|Y) return 0 ;;
+        0|false|FALSE|no|NO|n|N) return 1 ;;
+        "")
+            if [ ! -r /dev/tty ]; then
+                echo "==> Non-interactive shell: skipping optional codexbar-waybar install."
+                return 1
+            fi
+
+            printf "==> Waybar detected. Install optional codexbar-waybar? [y/N] " > /dev/tty
+            IFS= read -r choice < /dev/tty || return 1
+            case "$choice" in
+                y|Y|yes|YES) return 0 ;;
+                *) return 1 ;;
+            esac
+            ;;
+        *)
+            echo "Invalid DOTFILES_INSTALL_CODEXBAR value: $choice (use 1 or 0)." >&2
+            return 1
+            ;;
+    esac
+}
+
+install_optional_codexbar() {
+    if ! command -v waybar >/dev/null 2>&1; then
+        echo "==> Waybar not found; skipping optional codexbar-waybar prompt."
+        return
+    fi
+
+    if should_install_codexbar; then
+        run_repo_script install-codexbar.sh
+    else
+        echo "==> Optional codexbar-waybar install skipped."
+    fi
+}
+
 set_default_shell() {
     local zsh_bin current_shell
 
@@ -101,6 +140,7 @@ main() {
     run_repo_script install-lf.sh
     run_repo_script install-zsh-plugins.sh
     run_repo_script install-atuin.sh
+    install_optional_codexbar
     set_default_shell
 
     echo "==> Re-applying dotfiles after tool installation..."

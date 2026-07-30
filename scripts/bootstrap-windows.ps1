@@ -4,6 +4,7 @@
 $ErrorActionPreference = "Stop"
 
 $RepoUrl = if ($env:DOTFILES_REPO_URL) { $env:DOTFILES_REPO_URL } else { "https://github.com/KBT-0/MyDotfiles.git" }
+$RawBaseUrl = if ($env:DOTFILES_RAW_BASE_URL) { $env:DOTFILES_RAW_BASE_URL } else { "https://raw.githubusercontent.com/KBT-0/MyDotfiles/main" }
 $LfReleaseBaseUrl = "https://github.com/gokcehan/lf/releases/latest/download"
 
 function Write-Step {
@@ -244,6 +245,43 @@ function Install-JetBrainsNerdFont {
     }
 }
 
+function Test-InstallCodexBar {
+    if ($env:DOTFILES_INSTALL_CODEXBAR) {
+        switch -Regex ($env:DOTFILES_INSTALL_CODEXBAR.Trim().ToLowerInvariant()) {
+            '^(1|true|yes|y)$' { return $true }
+            '^(0|false|no|n)$' { return $false }
+            default {
+                Write-Warning "Invalid DOTFILES_INSTALL_CODEXBAR value '$env:DOTFILES_INSTALL_CODEXBAR'; skipping Win-CodexBar."
+                return $false
+            }
+        }
+    }
+
+    try {
+        $answer = Read-Host "Install optional Win-CodexBar system-tray app? [y/N]"
+        return $answer -match '^(?i:y|yes)$'
+    } catch {
+        Write-Host "Non-interactive shell: skipping optional Win-CodexBar install."
+        return $false
+    }
+}
+
+function Install-OptionalCodexBar {
+    if (-not (Test-InstallCodexBar)) {
+        Write-Host "Optional Win-CodexBar install skipped."
+        return
+    }
+
+    $sourceDir = Join-Path $HOME ".local\share\chezmoi"
+    $localScript = Join-Path $sourceDir "scripts\install-codexbar.ps1"
+
+    if (Test-Path -LiteralPath $localScript -PathType Leaf) {
+        & $localScript
+    } else {
+        Invoke-Expression (Invoke-RestMethod "$RawBaseUrl/scripts/install-codexbar.ps1")
+    }
+}
+
 function Apply-Dotfiles {
     Write-Step "Applying dotfiles from $RepoUrl..."
     Refresh-Path
@@ -273,6 +311,7 @@ Install-Inshellisense
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
 Apply-Dotfiles
 Ensure-PowerShellProfile
+Install-OptionalCodexBar
 Install-JetBrainsNerdFont
 
 Write-Host ""

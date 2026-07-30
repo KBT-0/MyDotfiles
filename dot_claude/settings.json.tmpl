@@ -3,10 +3,13 @@
     "defaultMode": "auto"
   },
   "model": "opus",
+{{ if ne .chezmoi.os "windows" }}
   "statusLine": {
     "type": "command",
-    "command": "python3 {{ .chezmoi.homeDir }}/.claude/statusline-command.py"
+    "command": "bash {{ .chezmoi.homeDir }}/.claude/statusline.sh",
+    "refreshInterval": 3
   },
+{{ end }}
   "enabledPlugins": {
     "caveman@caveman": true,
     "ponytail@ponytail": true
