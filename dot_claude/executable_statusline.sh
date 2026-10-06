@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Claude Code status line for Linux/macOS; same layout as statusline.ps1 on Windows.
 #   Line 1: model · effort │ dir │ branch* │ #PR
-#   Line 2: context bar % │ 5h % ↻left · 7d % ↻left │ cache │ $cost │ +added -removed
+#   Line 2: context bar % │ 5h % left · 7d % left │ cache │ $cost │ +added -removed
 
 export LC_ALL=C
 input=$(cat)
@@ -56,11 +56,11 @@ line2=("$(paint "$(level "$ctx")" "$bar") $ctx%")
 limits=""
 if [ -n "$five" ]; then
     five=$(int "$five")
-    limits="$(paint "$(level "$five")" "5h $five%")$(paint 2 " ↻$(reset_in "$five_reset")")"
+    limits="$(paint "$(level "$five")" "5h $five%")$(paint 2 " $(reset_in "$five_reset")")"
 fi
 if [ -n "$week" ]; then
     week=$(int "$week")
-    limits+="${limits:+ · }$(paint "$(level "$week")" "7d $week%")$(paint 2 " ↻$(reset_in "$week_reset")")"
+    limits+="${limits:+ · }$(paint "$(level "$week")" "7d $week%")$(paint 2 " $(reset_in "$week_reset")")"
 fi
 [ -n "$limits" ] && line2+=("$limits")
 
