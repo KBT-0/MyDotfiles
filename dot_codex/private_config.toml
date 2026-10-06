@@ -5,12 +5,11 @@ approvals_reviewer = "user"
 plan_mode_reasoning_effort = "xhigh"
 
 [features]
-ghost_commit = false
 undo = false
 memories = true
 
 [tui]
-status_line = ["model-with-reasoning", "current-dir", "git-branch", "pull-request-number", "context-used", "five-hour-limit", "weekly-limit", "estimated-thread-cost", "branch-changes", "run-state", "task-progress", "approval-mode"]
+status_line = ["model-with-reasoning", "project-name", "git-branch", "pull-request-number", "context-used", "five-hour-limit", "weekly-limit", "estimated-thread-cost", "branch-changes", "run-state", "task-progress", "approval-mode"]
 status_line_use_colors = true
 terminal_title = ["thread-title", "project-name"]
 

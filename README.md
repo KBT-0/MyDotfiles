@@ -233,7 +233,7 @@ them). Windows runs `~/.claude/statusline.ps1` in PowerShell 7 with no extra
 dependencies.
 
 Codex cannot run a status line command. Its native `tui.status_line` is set to
-the closest built-in items: model and reasoning, directory, git branch, PR,
+the closest built-in items: model and reasoning, project name, git branch, PR,
 context used, five-hour and weekly limits, estimated cost, branch changes,
 run/task state, and approval mode.
 
