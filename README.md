@@ -222,7 +222,7 @@ three seconds:
 
 ```
 Opus 5.5 · high │  chezmoi │  main* │ #12
-██████░░░░ 63% │ 5h 24% 2h12m · 7d 81% 3d4h │ cache 91% │ 💰$5.18 │ +156 -23
+██████░░░░ 63% │ 5h 24%  2h12m · 7d 81%  3d4h │ cache 91% │ 💰$5.18 │ +156 -23
 ```
 
 Model and effort, directory, git branch (`*` = uncommitted changes), PR; then

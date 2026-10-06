@@ -45,8 +45,8 @@ $five = $d.rate_limits.five_hour
 $week = $d.rate_limits.seven_day
 if ($five -or $week) {
     $limits = @()
-    if ($five) { $limits += (Paint (Level $five.used_percentage) "5h $([int]$five.used_percentage)%") + (Paint '2' " $(ResetIn $five.resets_at)") }
-    if ($week) { $limits += (Paint (Level $week.used_percentage) "7d $([int]$week.used_percentage)%") + (Paint '2' " $(ResetIn $week.resets_at)") }
+    if ($five) { $limits += (Paint (Level $five.used_percentage) "5h $([int]$five.used_percentage)%") + (Paint '2' "  $(ResetIn $five.resets_at)") }
+    if ($week) { $limits += (Paint (Level $week.used_percentage) "7d $([int]$week.used_percentage)%") + (Paint '2' "  $(ResetIn $week.resets_at)") }
     $line2 += $limits -join ' · '
 }
 
