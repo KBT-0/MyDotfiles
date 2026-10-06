@@ -190,7 +190,6 @@ Install-WingetPackage -Id "Microsoft.WindowsTerminal" -Name "Windows Terminal" -
 Install-WingetPackage -Id "twpayne.chezmoi" -Name "chezmoi" -Command "chezmoi"
 Install-WingetPackage -Id "JanDeDobbeleer.OhMyPosh" -Name "Oh My Posh" -Command "oh-my-posh"
 Install-WingetPackage -Id "Atuinsh.Atuin" -Name "Atuin" -Command "atuin"
-Install-WingetPackage -Id "jqlang.jq" -Name "jq" -Command "jq"
 Install-Lf
 
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force

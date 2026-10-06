@@ -1,6 +1,6 @@
 # Claude Code status line for native Windows (PowerShell 7, no jq/bash needed).
 #   Line 1: model · effort   dir   branch*   #PR
-#   Line 2: context bar %   5h % (reset) · 7d %   cache   $cost   +added -removed
+#   Line 2: context bar %   5h % ↻left · 7d % ↻left   cache   $cost   +added -removed
 
 $ErrorActionPreference = 'SilentlyContinue'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
@@ -9,7 +9,13 @@ $e = [char]27
 
 function Paint([string] $Code, [string] $Text) { "$e[${Code}m$Text$e[0m" }
 function Level([double] $Pct) { if ($Pct -ge 80) { '31' } elseif ($Pct -ge 50) { '33' } else { '32' } }
-function ResetAt($Epoch) { [DateTimeOffset]::FromUnixTimeSeconds([long]$Epoch).LocalDateTime.ToString('HH:mm') }
+function ResetIn($Epoch) {
+    $left = [DateTimeOffset]::FromUnixTimeSeconds([long]$Epoch) - [DateTimeOffset]::Now
+    if ($left.TotalSeconds -le 0) { return '0m' }
+    if ($left.TotalDays -ge 1) { return '{0}d{1}h' -f [int][Math]::Floor($left.TotalDays), $left.Hours }
+    if ($left.TotalHours -ge 1) { return '{0}h{1}m' -f [int][Math]::Floor($left.TotalHours), $left.Minutes }
+    '{0}m' -f $left.Minutes
+}
 
 $cwd = $d.workspace.current_dir ?? $d.cwd
 $sep = Paint '2' '│'
@@ -39,8 +45,8 @@ $five = $d.rate_limits.five_hour
 $week = $d.rate_limits.seven_day
 if ($five -or $week) {
     $limits = @()
-    if ($five) { $limits += (Paint (Level $five.used_percentage) "5h $([int]$five.used_percentage)%") + (Paint '2' " ↻$(ResetAt $five.resets_at)") }
-    if ($week) { $limits += Paint (Level $week.used_percentage) "7d $([int]$week.used_percentage)%" }
+    if ($five) { $limits += (Paint (Level $five.used_percentage) "5h $([int]$five.used_percentage)%") + (Paint '2' " ↻$(ResetIn $five.resets_at)") }
+    if ($week) { $limits += (Paint (Level $week.used_percentage) "7d $([int]$week.used_percentage)%") + (Paint '2' " ↻$(ResetIn $week.resets_at)") }
     $line2 += $limits -join ' · '
 }
 

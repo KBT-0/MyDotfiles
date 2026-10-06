@@ -1,176 +1,76 @@
 #!/usr/bin/env bash
-# avenoxstatusline — a two-line Claude Code status line with an ASCII pet.
-# Vendored from avenoxai/avenoxstatusline commit 0251c5554219a0214c9af219aac910cabe26e629.
-#
-#   Line 1: <pet>  model · effort · thinking      5h% · 7d%
-#   Line 2: <ctx bar> %   ⎇ branch*  ⑂worktree   ● badge  ⚑approvals  ●sync
-#
-# The pet is a gauge, not an ornament: its mood tracks context pressure,
-# reasoning effort, and pending approvals, so you can read session state
-# without reading any numbers.
-#
-# Performance: the status line re-runs constantly, so git + project reads are
-# cached ~5s per session_id (never key the cache off $$ — each render is a new
-# process and you would never get a hit).
-# Robustness: every external call is guarded; the script always prints, exit 0.
-#
-# Env knobs:
-#   SL_BADGE_CMD   command whose first stdout line becomes the project badge
-#   SL_NO_SERAI=1  disable the built-in Serai (.serai/config.json) badge
-#   SL_TICK        pin the animation clock (for tests/screenshots)
-#
-# License: MIT
+# Claude Code status line for Linux/macOS; same layout as statusline.ps1 on Windows.
+#   Line 1: model · effort │ dir │ branch* │ #PR
+#   Line 2: context bar % │ 5h % ↻left · 7d % ↻left │ cache │ $cost │ +added -removed
 
-# Prepend common package-manager bins only if they exist (macOS/Linux friendly).
-for d in /opt/homebrew/bin /usr/local/bin; do
-  [ -d "$d" ] && case ":$PATH:" in *":$d:"*) ;; *) PATH="$d:$PATH";; esac
-done
-export PATH
-
-if ! command -v jq >/dev/null 2>&1; then
-  printf 'avenoxstatusline: jq not found on PATH\n'
-  exit 0
-fi
-
+export LC_ALL=C
 input=$(cat)
+command -v jq >/dev/null 2>&1 || { echo "statusline: jq not found on PATH"; exit 0; }
 
-# ---- colors (literal ESC so we can print with %s) ----
-ESC=$'\033'; R="${ESC}[0m"; B="${ESC}[1m"; D="${ESC}[2m"
-CY="${ESC}[36m"; GR="${ESC}[32m"; YE="${ESC}[33m"; RD="${ESC}[31m"; MG="${ESC}[35m"
-
-# ---- parse stdin in one jq pass ----
-# One field per LINE, not tab-separated: tab is IFS whitespace, so `read` with
-# IFS=$'\t' silently collapses runs of tabs and every field after an empty one
-# shifts left. git_worktree is empty whenever you are not in a worktree, which
-# would push CWD into WT and the session id into CWD — killing every git lookup.
-# `IFS= read -r` per line keeps empty fields empty and preserves spaces.
-{
-  IFS= read -r MODEL; IFS= read -r CTX;   IFS= read -r EFFORT
-  IFS= read -r THINK; IFS= read -r COST;  IFS= read -r FIVE
-  IFS= read -r SEVEN; IFS= read -r WT;    IFS= read -r CWD
-  IFS= read -r SID
-} < <(
-  printf '%s' "$input" | jq -r '
-    [ (.model.display_name // "?"),
-      (.context_window.used_percentage // 0 | floor),
-      (.effort.level // ""),
-      (.thinking.enabled // false),
-      (.cost.total_cost_usd // 0),
-      (.rate_limits.five_hour.used_percentage // -1 | floor),
-      (.rate_limits.seven_day.used_percentage // -1 | floor),
-      (.workspace.git_worktree // ""),
-      (.workspace.current_dir // .cwd // "."),
-      (.session_id // "nosess")
-    ] | .[] | tostring | gsub("[\r\n\t]"; " ")' 2>/dev/null
+# One jq call; \x1f (not tab) keeps empty fields in place.
+IFS=$'\x1f' read -r model effort cwd session ctx five five_reset week week_reset pr cache_seen cache_warm cache_hit cost added removed < <(
+    jq -r '[.model.display_name, .effort.level, (.workspace.current_dir // .cwd), .session_id,
+        (.context_window.used_percentage // 0),
+        .rate_limits.five_hour.used_percentage, .rate_limits.five_hour.resets_at,
+        .rate_limits.seven_day.used_percentage, .rate_limits.seven_day.resets_at,
+        .pr.number, .prompt_cache.caching_observed, .prompt_cache.warm, (.prompt_cache.hit_ratio // 0),
+        .cost.total_cost_usd, .cost.total_lines_added, .cost.total_lines_removed]
+        | map(. // "" | tostring) | join("\u001f")' <<<"$input"
 )
 
-# ---- sanitize numerics (never let arithmetic crash the bar) ----
-int() { case "$1" in ''|*[!0-9-]*) echo "${2:-0}";; *) echo "$1";; esac; }
-MODEL=${MODEL:-?}; CTX=$(int "$CTX" 0); FIVE=$(int "$FIVE" -1); SEVEN=$(int "$SEVEN" -1)
-[ -z "$COST" ] && COST=0
-CWD=${CWD:-.}; SID=${SID:-nosess}
+e=$'\e'
+paint() { printf '%s' "$e[${1}m$2$e[0m"; }
+level() { if [ "$1" -ge 80 ]; then echo 31; elif [ "$1" -ge 50 ]; then echo 33; else echo 32; fi; }
+int() { printf '%.0f' "${1:-0}"; }
+reset_in() {
+    local left=$(( ${1:-0} - $(date +%s) ))
+    [ "$left" -le 0 ] && { echo 0m; return; }
+    if [ "$left" -ge 86400 ]; then echo "$(( left / 86400 ))d$(( left % 86400 / 3600 ))h"
+    elif [ "$left" -ge 3600 ]; then echo "$(( left / 3600 ))h$(( left % 3600 / 60 ))m"
+    else echo "$(( left / 60 ))m"; fi
+}
+join() { local out="$1"; shift; for part in "$@"; do out+=" $(paint 2 '│') $part"; done; printf '%s\n' "$out"; }
 
-# ---- git + project badge (cached ~5s by session_id) ----
-CACHE="${TMPDIR:-/tmp}/cc-sl-${SID//[^A-Za-z0-9]/_}.cache"
-now=$(date +%s 2>/dev/null || echo 0)
-# stat -f is BSD/macOS, stat -c is GNU/Linux — try both before giving up.
-mt=$(stat -f %m "$CACHE" 2>/dev/null || stat -c %Y "$CACHE" 2>/dev/null || echo 0)
-if [ -s "$CACHE" ] && [ $((now - mt)) -lt 5 ]; then
-  IFS=$'\t' read -r BRANCH DIRTY BADGE SYNC APPROV < "$CACHE"
+# Git is the slow part; cache it for 5s per session.
+cache="${TMPDIR:-/tmp}/claude-statusline-git-$session"
+mtime=$(stat -c %Y "$cache" 2>/dev/null || stat -f %m "$cache" 2>/dev/null || echo 0)
+if [ $(( $(date +%s) - mtime )) -lt 5 ]; then
+    git=$(cat "$cache")
 else
-  BRANCH=$(git -C "$CWD" symbolic-ref --short HEAD 2>/dev/null \
-           || git -C "$CWD" rev-parse --short HEAD 2>/dev/null || echo "")
-  DIRTY=""; [ -n "$(git -C "$CWD" status --porcelain --untracked-files=no 2>/dev/null | head -1)" ] && DIRTY="*"
-  ROOT=$(git -C "$CWD" rev-parse --show-toplevel 2>/dev/null || echo "$CWD")
-  BADGE=""; SYNC=""; APPROV=0
-
-  # Generic badge hook: any command, first line of stdout wins.
-  if [ -n "$SL_BADGE_CMD" ]; then
-    BADGE=$( (cd "$ROOT" 2>/dev/null && eval "$SL_BADGE_CMD") 2>/dev/null | head -1 | tr -d '\t\n' )
-  fi
-
-  # Built-in badge: Serai-governed repos (https://serai.run). Opt out with SL_NO_SERAI=1.
-  if [ -z "$BADGE" ] && [ -z "$SL_NO_SERAI" ] && [ -f "$ROOT/.serai/config.json" ]; then
-    BADGE="serai:$(basename "$ROOT")"
-    SS="$ROOT/.serai/cache/sync.state.json"
-    if [ -f "$SS" ]; then
-      hb=$(jq -r '(.lastHeartbeatAt // .heartbeatAt // .lastPullAt // .updatedAt // empty)
-                  | if type=="number" then . else (try (fromdateiso8601) catch empty) end' "$SS" 2>/dev/null)
-      if [ -n "$hb" ]; then [ $((now - ${hb%.*})) -lt 180 ] && SYNC="live" || SYNC="stale"; fi
-    fi
-    SNAP="$ROOT/.serai/cache/snapshot.json"
-    if [ -f "$SNAP" ]; then
-      APPROV=$(jq -r '[ (.approvalRequests // .approvals // [])[]
-                        | select(((.status // "")|ascii_downcase) | test("pending|requested|open")) ] | length' "$SNAP" 2>/dev/null)
-    fi
-  fi
-  APPROV=$(int "$APPROV" 0)
-  printf '%s\t%s\t%s\t%s\t%s' "$BRANCH" "$DIRTY" "$BADGE" "$SYNC" "$APPROV" > "$CACHE" 2>/dev/null
-fi
-APPROV=$(int "$APPROV" 0)
-[ ${#BRANCH} -gt 24 ] && BRANCH="${BRANCH:0:23}…"
-
-# ---- the pet: ALWAYS animating; idle blink/glance + a stunt every ~10s ----
-# Each render is a fresh process, so "animation" = frames chosen by wall-clock
-# time (T). The bar re-renders on every event + every refreshInterval seconds,
-# so the pet steps through frames as time passes. (SL_TICK overrides T for tests.)
-T=${SL_TICK:-$(date +%s 2>/dev/null || echo 0)}
-frame() { local -a a=("${@:2}"); PET="${a[$(( $1 % ${#a[@]} ))]}"; }   # frame <tick> f0 f1 …
-
-PETC="$CY"
-if   [ "$CTX" -ge 90 ]; then PETC="$RD"; frame "$T" "ʕ⊙ᴥ⊙ʔ‼" "ʕ☉ᴥ☉ʔ‼" "ʕノ⊙ᴥ⊙ʔノ‼" "ʕ⊙▱⊙ʔ‼"     # panic
-elif [ "$CTX" -ge 75 ]; then PETC="$YE"; frame "$T" "ʕ•﹏•ʔ💦" "ʕ°﹏°ʔ💦" "ʕ-﹏-ʔ💦" "ʕ•﹏•ʔ"        # sweating
-elif [ "$APPROV" -gt 0 ]; then PETC="$YE"; frame "$T" "ʕ•ᴥ•ʔ❗" "ʕ◕ᴥ◕ʔ❗" "ʕ•ᴥ•ʔ‼" "ʕ◕ᴥ◕ʔ❗"     # alert
-else
-  p=$(( T % 10 ))
-  if [ "$p" -lt 4 ]; then                         # ~4s stunt every 10s, animated frame-by-frame
-    case $(( (T / 10) % 9 )) in
-      0) frame "$p" "ʕ-ᴥ-ʔ z" "ʕ-ᴥ-ʔ zz" "ʕ-ᴥ-ʔ zzz" "ʕ-ᴥ-ʔ 💤";;          # nap
-      1) frame "$p" "ヽʕ•ᴥ•ʔ" "ʕ•ᴥ•ʔﾉ" "ヽʕ•ᴥ•ʔﾉ" "ʕ•ᴥ•ʔ";;                    # dance
-      2) frame "$p" "ʕ•ᴥ•ʔ" "ʕ•ᴥ•ʔﾉ" "ʕ•ᴥ•ʔノﾞ" "ʕ•ᴥ•ʔﾉ";;                     # wave
-      3) frame "$p" "ʕ•ᴥ•ʔ┳━┳" "ʕ •ᴥ•ʔ┳━┳" "ʕノ•ᴥ•ʔノ ︵┻━┻" "┬─┬ノʕ•ᴥ•ʔ";;   # tableflip → restore
-      4) frame "$p" "ʕ•ᴥ•ʔ" "ʕ•ᴥ•ʔ✿" "ʕ◕ᴥ◕ʔ✿" "ʕ•ᴥ•ʔ❀";;                      # flower
-      5) frame "$p" "ʕ•ᴥ•ʔ☕" "ʕ-ᴥ-ʔ☕" "ʕ•ᴥ•ʔ♨" "ʕ◕ᴥ◕ʔ☕";;                    # coffee
-      6) PETC="$MG"; frame "$p" "ʕ•ᴥ•ʔ✦" "ʕ•ᴥ•ʔ✧" "ʕ◕ᴥ◕ʔ✨" "ʕ•ᴥ•ʔ✦";;         # sparkle
-      7) frame "$p" "ʕっ•ᴥ•ʔっ" "ʕっ◕ᴥ◕ʔっ" "ʕっ•ᴥ•ʔっ♡" "ʕ•ᴥ•ʔ";;               # hug
-      8) frame "$p" "ʕ•ᴥ•ʔ" " ʕ•ᴥ•ʔ" "  ʕ•ᴥ• ʔ?" " ʕ◕ᴥ◕ʔ";;                    # wander / peek
-    esac
-  elif [ "$EFFORT" = xhigh ] || [ "$EFFORT" = max ]; then
-    PETC="$YE"; frame "$T" "ʕ•ᴥ•ʔ⚡" "ʕ◣_◢ʔ⚡" "ʕ•ᴥ•ʔ⚡" "ʕ-ᴥ-ʔ⚡"               # locked in
-  elif [ "$CTX" -ge 50 ]; then
-    frame "$T" "ʕ◔ᴥ◔ʔ" "ʕ◔ᴥ◔ʔ" "ʕ-ᴥ-ʔ" "ʕ◑ᴥ◑ʔ" "ʕ◔ᴥ◔ʔ" "ʕ◔ᴥ◔ʔﾞ"               # focused
-  else
-    frame "$T" "ʕ•ᴥ•ʔ" "ʕ•ᴥ•ʔ" "ʕ-ᴥ-ʔ" "ʕ◕ᴥ◕ʔ" "ʕ•ᴥ•ʔ" "ʕ •ᴥ• ʔ" "ʕ•ᴥ•ʔ" "ʕᴥ•ʔ"  # idle: blink / glance / lean
-  fi
+    git=$(git -C "$cwd" branch --show-current 2>/dev/null)
+    [ -n "$git" ] && [ -n "$(git -C "$cwd" status --porcelain 2>/dev/null)" ] && git+="*"
+    printf '%s' "$git" > "$cache"
 fi
 
-# ---- context bar (8 wide) + band color ----
-if   [ "$CTX" -ge 80 ]; then CC="$RD"; elif [ "$CTX" -ge 50 ]; then CC="$YE"; else CC="$GR"; fi
-bw=8; fill=$((CTX*bw/100)); [ $fill -gt $bw ] && fill=$bw; [ $fill -lt 0 ] && fill=0; empty=$((bw-fill))
-bar=""; i=0; while [ $i -lt $fill ]; do bar="${bar}▓"; i=$((i+1)); done
-i=0; while [ $i -lt $empty ]; do bar="${bar}░"; i=$((i+1)); done
+dir=${cwd%/}; dir=${dir##*/}; [ -n "$dir" ] || dir=/
+line1=("$(paint '1;36' "$model")${effort:+ $(paint 2 "· $effort")}" "$(paint 34 " $dir")")
+[ -n "$git" ] && line1+=("$(paint 35 " $git")")
+[ -n "$pr" ] && line1+=("$(paint 33 "#$pr")")
 
-# ---- assemble line 1 ----
-L1="${PETC}${PET}${R}  ${B}${MODEL}${R}"
-[ -n "$EFFORT" ]   && L1="${L1} ${D}·${R} ${EFFORT}"
-[ "$THINK" = true ] && L1="${L1} ${D}·${R} ${MG}think${R}"
-[ "$FIVE"  -ge 0 ] && L1="${L1}   ${D}5h${R} ${FIVE}%"
-[ "$SEVEN" -ge 0 ] && L1="${L1} ${D}·${R} ${D}7d${R} ${SEVEN}%"
+ctx=$(int "$ctx")
+filled=$(( (ctx + 5) / 10 ))
+bar=""
+for i in 1 2 3 4 5 6 7 8 9 10; do if [ "$i" -le "$filled" ]; then bar+="█"; else bar+="░"; fi; done
+line2=("$(paint "$(level "$ctx")" "$bar") $ctx%")
 
-# ---- assemble line 2 ----
-L2="${CC}${bar}${R} ${CC}${CTX}%${R}"
-[ -n "$BRANCH" ] && L2="${L2}  ${D}⎇${R} ${BRANCH}${DIRTY:+${YE}*${R}}"
-[ -n "$WT" ]     && L2="${L2} ${D}⑂${WT}${R}"
-# badge: dim the "prefix:" part when present, so the value stays readable
-if [ -n "$BADGE" ]; then
-  case "$BADGE" in
-    *:*) L2="${L2}  ${GR}●${R} ${D}${BADGE%%:*}:${R}${BADGE#*:}";;
-    *)   L2="${L2}  ${GR}●${R} ${BADGE}";;
-  esac
+limits=""
+if [ -n "$five" ]; then
+    five=$(int "$five")
+    limits="$(paint "$(level "$five")" "5h $five%")$(paint 2 " ↻$(reset_in "$five_reset")")"
 fi
-[ "$APPROV" -gt 0 ] && L2="${L2}  ${RD}⚑${APPROV}${R}"
-[ "$SYNC" = live ]  && L2="${L2}  ${GR}●sync${R}"
-[ "$SYNC" = stale ] && L2="${L2}  ${D}○sync${R}"
+if [ -n "$week" ]; then
+    week=$(int "$week")
+    limits+="${limits:+ · }$(paint "$(level "$week")" "7d $week%")$(paint 2 " ↻$(reset_in "$week_reset")")"
+fi
+[ -n "$limits" ] && line2+=("$limits")
 
-printf '%s\n%s\n' "$L1" "$L2"
-exit 0
+if [ "$cache_seen" = "true" ]; then
+    if [ "$cache_warm" = "true" ]; then line2+=("$(paint 32 "cache $(int "$(awk "BEGIN{print $cache_hit*100}")")%")")
+    else line2+=("$(paint 2 'cache cold')"); fi
+fi
+
+[ -n "$cost" ] && line2+=("$(paint 33 "💰\$$(printf '%.2f' "$cost")")")
+{ [ -n "$added" ] || [ -n "$removed" ]; } && line2+=("$(paint 32 "+${added:-0}") $(paint 31 "-${removed:-0}")")
+
+join "${line1[@]}"
+join "${line2[@]}"

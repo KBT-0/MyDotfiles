@@ -11,6 +11,7 @@ scripts/**
 .codex/.env
 
 {{ if eq .chezmoi.os "windows" }}
+.claude/statusline.sh
 # Linux/macOS-only run scripts; Windows is handled by bootstrap-windows.ps1.
 10-install-zsh-tools.sh
 99-cleanup-legacy-bash-editor.sh

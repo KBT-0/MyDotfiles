@@ -38,7 +38,7 @@ curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/boots
 
 This installs base packages, chezmoi, the dotfiles, Oh My Posh, lf + lfcd,
 zsh-autosuggestions, zsh-syntax-highlighting, and Atuin history search. It also
-sets zsh as the default shell. The Avenox Claude Code status line is included.
+sets zsh as the default shell. The Claude Code status line is included.
 If Waybar is already installed, the bootstrap asks whether to install the
 optional codexbar-waybar integration; the default answer is no.
 
@@ -49,7 +49,7 @@ curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/boots
 ```
 
 This installs the same zsh-autosuggestions + zsh-syntax-highlighting stack,
-Atuin history search, Oh My Posh, lf + lfcd, and the Avenox Claude Code status
+Atuin history search, Oh My Posh, lf + lfcd, and the Claude Code status
 line. It asks whether to install the optional CodexBar menu-bar app; the default
 answer is no.
 
@@ -152,7 +152,7 @@ dotfiles/
 │   ├── dot_config/                # -> ~/.config/
 │   │   ├── shell/lfcd.sh
 │   │   └── starship.toml
-│   ├── dot_claude/                # Claude settings + Avenox status line
+│   ├── dot_claude/                # Claude settings + status line (sh / ps1)
 │   ├── dot_codex/                 # Codex config, rules, and native status line
 │   └── AppData/                   # Windows-only files
 │       └── Local/...
@@ -217,15 +217,25 @@ CodexBar is deliberately opt-in and independent of Chezmoi updates:
   installer adds the module files and CSS, but intentionally leaves the final
   `"custom/codexbar"` placement in the user's Waybar layout manual.
 
-Claude Code on every platform uses the vendored
-[Avenox status line](https://github.com/avenoxai/avenoxstatusline), refreshed
-every three seconds. It needs `bash`, `git`, and `jq`; the full bootstraps
-install these dependencies. On Windows it runs through Git Bash.
+Claude Code uses the same two-line status line everywhere, refreshed every
+three seconds:
 
-Codex cannot run the Avenox Claude `statusLine` command. It uses Codex's native
-`tui.status_line` configuration instead; this repo already enables model and
-reasoning, context remaining, five-hour and weekly limits, run/task state, and
-approval mode.
+```
+Opus 5.5 · high │  chezmoi │  main* │ #12
+██████░░░░ 63% │ 5h 24% ↻2h12m · 7d 81% ↻3d4h │ cache 91% │ 💰$5.18 │ +156 -23
+```
+
+Model and effort, directory, git branch (`*` = uncommitted changes), PR; then
+context usage, 5-hour and weekly limits with time left until each resets,
+prompt cache hit ratio, estimated session cost, and lines changed. Linux/macOS
+run `~/.claude/statusline.sh` (`bash`, `git`, `jq`; the bootstraps install
+them). Windows runs `~/.claude/statusline.ps1` in PowerShell 7 with no extra
+dependencies.
+
+Codex cannot run a status line command. Its native `tui.status_line` is set to
+the closest built-in items: model and reasoning, directory, git branch, PR,
+context used, five-hour and weekly limits, estimated cost, branch changes,
+run/task state, and approval mode.
 
 ---
 
@@ -250,7 +260,7 @@ chezmoi diff            # preview what would change
 chezmoi apply -v        # apply (verbose)
 ```
 
-These commands update the managed Avenox script, but they do not install or
+These commands update the managed status line scripts, but they do not install or
 upgrade any optional CodexBar app or Waybar integration.
 
 ---
@@ -279,7 +289,6 @@ git add . && git commit -m "tweak zsh" && git push
 - CodexBar (macOS/CLI): https://github.com/steipete/CodexBar
 - Win-CodexBar: https://github.com/nesszer/Win-CodexBar
 - codexbar-waybar: https://github.com/Marouan-chak/codexbar-waybar
-- avenoxstatusline: https://github.com/avenoxai/avenoxstatusline
 - inshellisense: https://github.com/microsoft/inshellisense
 - PSReadLine: https://github.com/PowerShell/PSReadLine
 - Starship: https://github.com/starship/starship
