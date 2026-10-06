@@ -26,7 +26,7 @@ irm https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/bootstrap-wi
 Then open a new Windows Terminal PowerShell 7 tab and set the profile font to `JetBrainsMono Nerd Font`.
 
 This installs PowerShell 7, Windows Terminal, chezmoi, Oh My Posh, lf + lfcd,
-and `inshellisense` prediction menus. It also asks whether to install the
+Atuin history search, and PSReadLine inline suggestions with zsh-style keys. It also asks whether to install the
 optional [Win-CodexBar](https://github.com/nesszer/Win-CodexBar) tray app;
 the default answer is no.
 
@@ -73,7 +73,7 @@ Want the full WSL/Linux setup or just one tool? Run a single script.
 | Oh My Posh | Prompt theming | `install-ohmyposh.*` |
 | lf | Terminal file manager with `lfcd` shell integration | `install-lf.*` |
 | Zsh plugins | Autosuggestions and syntax highlighting for Linux/macOS | `install-zsh-plugins.sh` |
-| Atuin | Default Linux/macOS shell history search on Ctrl-R and Up Arrow | `install-atuin.sh` |
+| Atuin | Default shell history search on Ctrl-R and Up Arrow | `install-atuin.*` |
 | CodexBar | Optional macOS app, Windows tray app, or Linux Waybar integration | `install-codexbar.*` |
 | Shell prediction menus | Optional IDE-style below-prompt suggestions via `inshellisense` | `install-shell-predictions.*` |
 | PowerShell predictions | Optional PowerShell-native `PSReadLine` ListView suggestions | `install-psreadline-predictions.ps1` |
@@ -117,10 +117,13 @@ irm https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-ohmy
 # lf file manager
 irm https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-lf.ps1 | iex
 
-# Default live prediction menus via inshellisense
+# Default Atuin history search (selects it on this machine)
+irm https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-atuin.ps1 | iex
+
+# Optional inshellisense prediction menus
 irm https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-shell-predictions.ps1 | iex
 
-# Optional PSReadLine ListView predictions instead of inshellisense
+# Optional PSReadLine ListView predictions instead of Atuin
 irm https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/install-psreadline-predictions.ps1 | iex
 
 # Optional Win-CodexBar tray app
@@ -175,7 +178,10 @@ Oh My Posh uses the built-in `atomic` theme on PowerShell, bash, and zsh.
 
 Shell history/prediction defaults:
 
-- PowerShell/Windows: `inshellisense` shell plugin
+- PowerShell/Windows: the same habits as zsh: Atuin on `Ctrl-R` and Up Arrow,
+  grey PSReadLine inline suggestions (Right Arrow, End or Shift+Tab accepts),
+  built-in syntax colouring, and the zsh emacs keymap (`Alt+Backspace`,
+  `Ctrl+W`, `Alt+D`, `Ctrl+A/E/K/U`) with zsh `WORDCHARS` word boundaries
 - Zsh on WSL/Linux and macOS: Atuin-backed grey suggestions rendered by
   `zsh-autosuggestions`, command highlighting via `zsh-syntax-highlighting`,
   and Atuin search on `Ctrl-R` and Up Arrow
@@ -195,12 +201,11 @@ switch back. A normal `chezmoi update` installs/refreshes the Zsh plugins and
 migrates existing WSL installs to Atuin; it
 disables the inshellisense shell hook but does not uninstall the package.
 
-On Windows, `PSReadLine` ListView is still available as an optional alternative. The prediction installers are intentionally mutually exclusive:
-
-- `install-shell-predictions.ps1` enables `inshellisense` and removes PSReadLine prediction hooks from `$PROFILE`.
-- `install-psreadline-predictions.ps1` enables PSReadLine `ListView` and removes the `inshellisense` profile hook.
-
-This only changes profile integration; it does not uninstall the other tool.
+On Windows the managed `$PROFILE` reads the same `~/.config/shell/history-backend`
+file. `install-shell-predictions.ps1` selects `inshellisense`,
+`install-psreadline-predictions.ps1` selects PSReadLine `ListView`, and
+`install-atuin.ps1` switches back. This only changes the selection; it does not
+uninstall the other tool.
 
 ### AI usage bars and status lines
 
@@ -212,11 +217,10 @@ CodexBar is deliberately opt-in and independent of Chezmoi updates:
   installer adds the module files and CSS, but intentionally leaves the final
   `"custom/codexbar"` placement in the user's Waybar layout manual.
 
-Claude Code on Linux and macOS uses the vendored
+Claude Code on every platform uses the vendored
 [Avenox status line](https://github.com/avenoxai/avenoxstatusline), refreshed
-every three seconds. It needs `bash`, `git`, and `jq`; the full Linux/macOS
-bootstraps install these dependencies. Native Windows is excluded because the
-upstream status line is documented and tested for macOS/Linux Bash.
+every three seconds. It needs `bash`, `git`, and `jq`; the full bootstraps
+install these dependencies. On Windows it runs through Git Bash.
 
 Codex cannot run the Avenox Claude `statusLine` command. It uses Codex's native
 `tui.status_line` configuration instead; this repo already enables model and

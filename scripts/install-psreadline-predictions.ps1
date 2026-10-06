@@ -1,24 +1,11 @@
 # Install optional PowerShell PSReadLine ListView predictions.
-# This disables inshellisense in the PowerShell profile to avoid competing UIs.
+# Selects it in ~/.config/shell/history-backend; the managed profile does the rest.
 
 $ErrorActionPreference = "Stop"
-
-$InshellisenseMarker = "# >>> inshellisense integration >>>"
-$PSReadLineBeginMarker = "# >>> PSReadLine prediction integration >>>"
-$PSReadLineEndMarker = "# <<< PSReadLine prediction integration <<<"
 
 function Write-Step {
     param([string] $Message)
     Write-Host "==> $Message" -ForegroundColor Cyan
-}
-
-function Ensure-Profile {
-    $profileDir = Split-Path -Parent $PROFILE
-    New-Item -Path $profileDir -ItemType Directory -Force | Out-Null
-
-    if (-not (Test-Path -LiteralPath $PROFILE)) {
-        New-Item -Path $PROFILE -ItemType File -Force | Out-Null
-    }
 }
 
 function Ensure-PSGallery {
@@ -53,85 +40,17 @@ function Ensure-PSReadLine {
     }
 }
 
-function Remove-InshellisenseBlock {
-    param([string] $Content)
+function Select-HistoryBackend {
+    param([string] $Backend)
 
-    if (-not $Content) {
-        return ""
-    }
-
-    $pattern = "(?s)" + [regex]::Escape($InshellisenseMarker) + ".*$"
-    return ([regex]::Replace($Content, $pattern, "")).TrimEnd()
-}
-
-function Remove-PSReadLinePredictionBlock {
-    param([string] $Content)
-
-    if (-not $Content) {
-        return ""
-    }
-
-    if ($Content.Contains($PSReadLineBeginMarker)) {
-        $pattern = "(?s)\s*" + [regex]::Escape($PSReadLineBeginMarker) + ".*?" + [regex]::Escape($PSReadLineEndMarker)
-        $Content = [regex]::Replace($Content, $pattern, "")
-    }
-
-    $lines = $Content -split "`r?`n"
-    $skipLegacyBlock = $false
-    $filtered = foreach ($line in $lines) {
-        if ($line -eq "# PSReadLine: command history prediction list.") {
-            $skipLegacyBlock = $true
-            continue
-        }
-
-        if ($skipLegacyBlock) {
-            if ($line -eq "}") {
-                $skipLegacyBlock = $false
-            }
-            continue
-        }
-
-        if ($line -match 'Set-PSReadLineOption\s+-PredictionSource') { continue }
-        if ($line -match 'Set-PSReadLineOption\s+-PredictionViewStyle') { continue }
-        if ($line -match 'Set-PSReadLineKeyHandler\s+-Key\s+Tab\s+-Function\s+MenuComplete') { continue }
-        $line
-    }
-
-    return (($filtered -join "`r`n").TrimEnd())
-}
-
-function Enable-PSReadLineProfile {
-    Ensure-Profile
-
-    $content = Get-Content -LiteralPath $PROFILE -Raw -ErrorAction SilentlyContinue
-    $content = Remove-InshellisenseBlock -Content $content
-    $content = Remove-PSReadLinePredictionBlock -Content $content
-
-    $block = @"
-$PSReadLineBeginMarker
-# Optional PowerShell-native prediction UI. Running install-shell-predictions.ps1 disables this block.
-if (Get-Module -ListAvailable -Name PSReadLine) {
-    Import-Module PSReadLine
-    try { Set-PSReadLineOption -PredictionSource History } catch {}
-    try { Set-PSReadLineOption -PredictionViewStyle ListView } catch {}
-    try { Set-PSReadLineOption -EditMode Windows } catch {}
-    try { Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete } catch {}
-}
-$PSReadLineEndMarker
-"@
-
-    if ($content) {
-        $content = "$($content.TrimEnd())`r`n`r`n$block"
-    } else {
-        $content = $block
-    }
-
-    Set-Content -LiteralPath $PROFILE -Value $content -Encoding UTF8
+    $backendFile = Join-Path $HOME ".config\shell\history-backend"
+    New-Item -Path (Split-Path -Parent $backendFile) -ItemType Directory -Force | Out-Null
+    Set-Content -LiteralPath $backendFile -Value $Backend -Encoding ascii
 }
 
 Ensure-PSReadLine
-Enable-PSReadLineProfile
+Select-HistoryBackend "psreadline"
 
 Write-Host ""
-Write-Host "==> Done. PSReadLine ListView is enabled and inshellisense is disabled in `$PROFILE." -ForegroundColor Cyan
+Write-Host "==> Done. PSReadLine ListView is selected on this machine. Run install-atuin.ps1 to switch back." -ForegroundColor Cyan
 Write-Host "==> Open a new PowerShell tab." -ForegroundColor Cyan

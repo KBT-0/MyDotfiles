@@ -10,7 +10,11 @@ scripts/**
 .codex/auth.json
 .codex/.env
 
-{{ if ne .chezmoi.os "windows" }}
+{{ if eq .chezmoi.os "windows" }}
+# Linux/macOS-only run scripts; Windows is handled by bootstrap-windows.ps1.
+10-install-zsh-tools.sh
+99-cleanup-legacy-bash-editor.sh
+{{ else }}
 Documents
 Documents/PowerShell/**
 {{ end }}

@@ -3,13 +3,15 @@
     "defaultMode": "auto"
   },
   "model": "opus",
-{{ if ne .chezmoi.os "windows" }}
   "statusLine": {
     "type": "command",
+{{- if eq .chezmoi.os "windows" }}
+    "command": "\"C:/Program Files/Git/bin/bash.exe\" {{ .chezmoi.homeDir }}/.claude/statusline.sh",
+{{- else }}
     "command": "bash {{ .chezmoi.homeDir }}/.claude/statusline.sh",
+{{- end }}
     "refreshInterval": 3
   },
-{{ end }}
   "enabledPlugins": {
     "caveman@caveman": true,
     "ponytail@ponytail": true

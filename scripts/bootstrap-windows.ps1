@@ -116,121 +116,6 @@ function Install-Lf {
     Refresh-Path
 }
 
-function Ensure-PSGallery {
-    try {
-        if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
-            Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Scope CurrentUser -Force | Out-Null
-        }
-
-        $repo = Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue
-        if ($repo -and $repo.InstallationPolicy -ne "Trusted") {
-            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-        }
-    } catch {
-        Write-Warning "PSGallery hazirlanamadi: $($_.Exception.Message)"
-    }
-}
-
-function Ensure-PSReadLine {
-    Write-Step "Installing/updating PSReadLine..."
-    Ensure-PSGallery
-
-    try {
-        Install-Module PSReadLine -Scope CurrentUser -Force -AllowClobber -Repository PSGallery
-    } catch {
-        Write-Warning "PSReadLine kurulumu atlandi: $($_.Exception.Message)"
-    }
-}
-
-function Install-Inshellisense {
-    Write-Step "Installing inshellisense..."
-    Refresh-Path
-
-    if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
-        throw "npm not found after Node.js install. Open a new PowerShell tab and re-run this script."
-    }
-
-    npm install -g @microsoft/inshellisense
-
-    $npmBin = Join-Path $env:APPDATA "npm"
-    if (Test-Path -LiteralPath $npmBin) {
-        Add-UserPath $npmBin
-    }
-
-    Refresh-Path
-
-    $isCommand = Get-Command is -ErrorAction SilentlyContinue
-    if ($isCommand) {
-        & $isCommand.Source init pwsh | Out-Null
-    }
-}
-
-function Ensure-PowerShellProfile {
-    Write-Step "Writing PowerShell 7 profile..."
-
-    $profileDir = Join-Path ([Environment]::GetFolderPath("MyDocuments")) "PowerShell"
-    $profilePath = Join-Path $profileDir "Microsoft.PowerShell_profile.ps1"
-    New-Item -Path $profileDir -ItemType Directory -Force | Out-Null
-
-    $profileContent = @'
-# Oh My Posh prompt - atomic theme shared with bash/zsh profiles.
-if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
-    oh-my-posh init pwsh --config atomic | Invoke-Expression
-}
-
-# >>> lfcd integration >>>
-# lf file manager integration.
-$LfBinDir = Join-Path $HOME ".local\bin"
-if ((Test-Path -LiteralPath $LfBinDir) -and (($env:Path -split ';') -notcontains $LfBinDir)) {
-    $env:Path = "$LfBinDir;$env:Path"
-}
-
-function lfcd {
-    param(
-        [Parameter(ValueFromRemainingArguments = $true)]
-        [string[]] $LfArgs
-    )
-
-    $lfCommand = Get-Command lf.exe -ErrorAction SilentlyContinue
-    if (-not $lfCommand) {
-        Write-Warning "lf.exe not found. Run scripts/install-lf.ps1 from the dotfiles repo."
-        return
-    }
-
-    $lastDir = & $lfCommand.Source -print-last-dir @LfArgs
-    if ($LASTEXITCODE -ne 0) {
-        return
-    }
-
-    if ($lastDir -and (Test-Path -LiteralPath $lastDir -PathType Container)) {
-        Set-Location -LiteralPath $lastDir
-    }
-}
-
-Set-Alias -Name lf -Value lfcd -Option AllScope -Force
-# <<< lfcd integration <<<
-
-# >>> inshellisense integration >>>
-# Default prediction UI. Keep this block last in the profile.
-`$InshellisenseNodeBin = Join-Path `$env:ProgramFiles "nodejs"
-if ((Test-Path -LiteralPath `$InshellisenseNodeBin) -and ((`$env:Path -split ';') -notcontains `$InshellisenseNodeBin)) {
-    `$env:Path = "`$InshellisenseNodeBin;`$env:Path"
-}
-
-`$InshellisenseNpmBin = Join-Path `$env:APPDATA "npm"
-if ((Test-Path -LiteralPath `$InshellisenseNpmBin) -and ((`$env:Path -split ';') -notcontains `$InshellisenseNpmBin)) {
-    `$env:Path = "`$InshellisenseNpmBin;`$env:Path"
-}
-
-`$InshellisensePwshInit = Join-Path `$HOME ".inshellisense\init\pwsh\init.ps1"
-if (Test-Path -LiteralPath `$InshellisensePwshInit -PathType Leaf) {
-    . `$InshellisensePwshInit
-}
-'@
-
-    Set-Content -Path $profilePath -Value $profileContent -Encoding UTF8
-}
-
 function Install-JetBrainsNerdFont {
     Write-Step "Installing JetBrainsMono Nerd Font..."
     Refresh-Path
@@ -304,13 +189,12 @@ Install-WingetPackage -Id "Microsoft.PowerShell" -Name "PowerShell 7" -Command "
 Install-WingetPackage -Id "Microsoft.WindowsTerminal" -Name "Windows Terminal" -Command "wt"
 Install-WingetPackage -Id "twpayne.chezmoi" -Name "chezmoi" -Command "chezmoi"
 Install-WingetPackage -Id "JanDeDobbeleer.OhMyPosh" -Name "Oh My Posh" -Command "oh-my-posh"
-Install-WingetPackage -Id "OpenJS.NodeJS.LTS" -Name "Node.js LTS" -Command "npm"
+Install-WingetPackage -Id "Atuinsh.Atuin" -Name "Atuin" -Command "atuin"
+Install-WingetPackage -Id "jqlang.jq" -Name "jq" -Command "jq"
 Install-Lf
-Install-Inshellisense
 
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
 Apply-Dotfiles
-Ensure-PowerShellProfile
 Install-OptionalCodexBar
 Install-JetBrainsNerdFont
 
@@ -322,5 +206,5 @@ Write-Host "    `$PSVersionTable.PSVersion"
 Write-Host "    oh-my-posh --version"
 Write-Host "    lf -version"
 Write-Host "    Get-Command lfcd"
-Write-Host "    is --version"
+Write-Host "    atuin --version"
 Write-Host "    chezmoi status"

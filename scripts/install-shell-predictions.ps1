@@ -1,11 +1,7 @@
-# Install the default PowerShell prediction UI: inshellisense.
-# This disables PSReadLine ListView/MenuComplete profile hooks to avoid conflicts.
+# Install the optional PowerShell prediction UI: inshellisense.
+# Selects it in ~/.config/shell/history-backend; the managed profile does the rest.
 
 $ErrorActionPreference = "Stop"
-
-$InshellisenseMarker = "# >>> inshellisense integration >>>"
-$PSReadLineBeginMarker = "# >>> PSReadLine prediction integration >>>"
-$PSReadLineEndMarker = "# <<< PSReadLine prediction integration <<<"
 
 function Write-Step {
     param([string] $Message)
@@ -64,95 +60,12 @@ function Ensure-Node {
     }
 }
 
-function Ensure-Profile {
-    $profileDir = Split-Path -Parent $PROFILE
-    New-Item -Path $profileDir -ItemType Directory -Force | Out-Null
+function Select-HistoryBackend {
+    param([string] $Backend)
 
-    if (-not (Test-Path -LiteralPath $PROFILE)) {
-        New-Item -Path $PROFILE -ItemType File -Force | Out-Null
-    }
-}
-
-function Remove-InshellisenseBlock {
-    param([string] $Content)
-
-    if (-not $Content) {
-        return ""
-    }
-
-    $pattern = "(?s)" + [regex]::Escape($InshellisenseMarker) + ".*$"
-    return ([regex]::Replace($Content, $pattern, "")).TrimEnd()
-}
-
-function Remove-PSReadLinePredictionBlock {
-    param([string] $Content)
-
-    if (-not $Content) {
-        return ""
-    }
-
-    if ($Content.Contains($PSReadLineBeginMarker)) {
-        $pattern = "(?s)\s*" + [regex]::Escape($PSReadLineBeginMarker) + ".*?" + [regex]::Escape($PSReadLineEndMarker)
-        $Content = [regex]::Replace($Content, $pattern, "")
-    }
-
-    $lines = $Content -split "`r?`n"
-    $skipLegacyBlock = $false
-    $filtered = foreach ($line in $lines) {
-        if ($line -eq "# PSReadLine: command history prediction list.") {
-            $skipLegacyBlock = $true
-            continue
-        }
-
-        if ($skipLegacyBlock) {
-            if ($line -eq "}") {
-                $skipLegacyBlock = $false
-            }
-            continue
-        }
-
-        if ($line -match 'Set-PSReadLineOption\s+-PredictionSource') { continue }
-        if ($line -match 'Set-PSReadLineOption\s+-PredictionViewStyle') { continue }
-        if ($line -match 'Set-PSReadLineKeyHandler\s+-Key\s+Tab\s+-Function\s+MenuComplete') { continue }
-        $line
-    }
-
-    return (($filtered -join "`r`n").TrimEnd())
-}
-
-function Enable-InshellisenseProfile {
-    Ensure-Profile
-
-    $content = Get-Content -LiteralPath $PROFILE -Raw -ErrorAction SilentlyContinue
-    $content = Remove-InshellisenseBlock -Content $content
-    $content = Remove-PSReadLinePredictionBlock -Content $content
-
-    $block = @"
-$InshellisenseMarker
-# Default prediction UI. Keep this block last in the profile.
-`$InshellisenseNodeBin = Join-Path `$env:ProgramFiles "nodejs"
-if ((Test-Path -LiteralPath `$InshellisenseNodeBin) -and ((`$env:Path -split ';') -notcontains `$InshellisenseNodeBin)) {
-    `$env:Path = "`$InshellisenseNodeBin;`$env:Path"
-}
-
-`$InshellisenseNpmBin = Join-Path `$env:APPDATA "npm"
-if ((Test-Path -LiteralPath `$InshellisenseNpmBin) -and ((`$env:Path -split ';') -notcontains `$InshellisenseNpmBin)) {
-    `$env:Path = "`$InshellisenseNpmBin;`$env:Path"
-}
-
-`$InshellisensePwshInit = Join-Path `$HOME ".inshellisense\init\pwsh\init.ps1"
-if (Test-Path -LiteralPath `$InshellisensePwshInit -PathType Leaf) {
-    . `$InshellisensePwshInit
-}
-"@
-
-    if ($content) {
-        $content = "$($content.TrimEnd())`r`n`r`n$block"
-    } else {
-        $content = $block
-    }
-
-    Set-Content -LiteralPath $PROFILE -Value $content -Encoding UTF8
+    $backendFile = Join-Path $HOME ".config\shell\history-backend"
+    New-Item -Path (Split-Path -Parent $backendFile) -ItemType Directory -Force | Out-Null
+    Set-Content -LiteralPath $backendFile -Value $Backend -Encoding ascii
 }
 
 Write-Step "Installing inshellisense..."
@@ -172,8 +85,8 @@ if (-not (Get-Command is -ErrorAction SilentlyContinue)) {
     & $isCommand.Source init pwsh | Out-Null
 }
 
-Enable-InshellisenseProfile
+Select-HistoryBackend "inshellisense"
 
 Write-Host ""
-Write-Host "==> Done. inshellisense is enabled and PSReadLine prediction hooks are disabled in `$PROFILE." -ForegroundColor Cyan
+Write-Host "==> Done. inshellisense is selected on this machine. Run install-atuin.ps1 to switch back." -ForegroundColor Cyan
 Write-Host "==> Open a new PowerShell tab, then run: is doctor" -ForegroundColor Cyan
