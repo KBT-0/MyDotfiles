@@ -1,6 +1,6 @@
 # Claude Code status line for native Windows (PowerShell 7, no jq/bash needed).
 #   Line 1: model · effort   dir   branch*   #PR
-#   Line 2: context bar %   5h % (reset) · 7d %   cache   +added -removed
+#   Line 2: context bar %   5h % (reset) · 7d %   cache   $cost   +added -removed
 
 $ErrorActionPreference = 'SilentlyContinue'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
@@ -48,6 +48,8 @@ $pc = $d.prompt_cache
 if ($pc.caching_observed) {
     $line2 += if ($pc.warm) { Paint '32' "cache $([int]($pc.hit_ratio * 100))%" } else { Paint '2' 'cache cold' }
 }
+
+if ($null -ne $d.cost.total_cost_usd) { $line2 += Paint '33' ('💰$' + ([double]$d.cost.total_cost_usd).ToString('0.00', [Globalization.CultureInfo]::InvariantCulture)) }
 
 $added = $d.cost.total_lines_added
 $removed = $d.cost.total_lines_removed
