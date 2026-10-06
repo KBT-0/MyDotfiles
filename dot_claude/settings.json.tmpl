@@ -6,7 +6,7 @@
   "statusLine": {
     "type": "command",
 {{- if eq .chezmoi.os "windows" }}
-    "command": "\"C:/Program Files/Git/bin/bash.exe\" {{ .chezmoi.homeDir }}/.claude/statusline.sh",
+    "command": "pwsh -NoProfile -NoLogo -File {{ .chezmoi.homeDir }}/.claude/statusline.ps1",
 {{- else }}
     "command": "bash {{ .chezmoi.homeDir }}/.claude/statusline.sh",
 {{- end }}

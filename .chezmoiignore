@@ -15,6 +15,7 @@ scripts/**
 10-install-zsh-tools.sh
 99-cleanup-legacy-bash-editor.sh
 {{ else }}
+.claude/statusline.ps1
 Documents
 Documents/PowerShell/**
 {{ end }}
