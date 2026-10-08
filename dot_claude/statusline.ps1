@@ -40,6 +40,12 @@ if ($d.pr.number) { $line1 += Paint '33' "#$($d.pr.number)" }
 $ctx = [double]($d.context_window.used_percentage ?? 0)
 $filled = [int][Math]::Round($ctx / 10)
 $line2 = @((Paint (Level $ctx) (('█' * $filled) + ('░' * (10 - $filled)))) + " $([int]$ctx)%")
+# Context in tokens: every turn re-sends all of it. Yellow from 150k (MyAgentKit's hand-off/compact
+# line), red from 300k.
+$cu = $d.context_window.current_usage
+$tok = if ($cu) { [double]$cu.input_tokens + [double]$cu.cache_creation_input_tokens + [double]$cu.cache_read_input_tokens }
+       else { $ctx * [double]$d.context_window.context_window_size / 100 }
+if ($tok -gt 0) { $line2[0] += ' ' + (Paint $(if ($tok -ge 300000) { '31' } elseif ($tok -ge 150000) { '33' } else { '32' }) ('{0}k' -f [int]($tok / 1000))) }
 
 $five = $d.rate_limits.five_hour
 $week = $d.rate_limits.seven_day

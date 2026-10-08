@@ -8,9 +8,11 @@ input=$(cat)
 command -v jq >/dev/null 2>&1 || { echo "statusline: jq not found on PATH"; exit 0; }
 
 # One jq call; \x1f (not tab) keeps empty fields in place.
-IFS=$'\x1f' read -r model effort cwd session ctx five five_reset week week_reset pr cache_seen cache_warm cache_hit cost added removed < <(
+IFS=$'\x1f' read -r model effort cwd session ctx tok five five_reset week week_reset pr cache_seen cache_warm cache_hit cost added removed < <(
     jq -r '[.model.display_name, .effort.level, (.workspace.current_dir // .cwd), .session_id,
         (.context_window.used_percentage // 0),
+        (((.context_window.current_usage // {}) | (.input_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0)) as $t
+            | if $t > 0 then $t else (.context_window.used_percentage // 0) * (.context_window.context_window_size // 0) / 100 end | floor),
         .rate_limits.five_hour.used_percentage, .rate_limits.five_hour.resets_at,
         .rate_limits.seven_day.used_percentage, .rate_limits.seven_day.resets_at,
         .pr.number, .prompt_cache.caching_observed, .prompt_cache.warm, (.prompt_cache.hit_ratio // 0),
@@ -52,6 +54,13 @@ filled=$(( (ctx + 5) / 10 ))
 bar=""
 for i in 1 2 3 4 5 6 7 8 9 10; do if [ "$i" -le "$filled" ]; then bar+="█"; else bar+="░"; fi; done
 line2=("$(paint "$(level "$ctx")" "$bar") $ctx%")
+# Context in tokens: every turn re-sends all of it. Yellow from 150k (MyAgentKit's hand-off/compact
+# line), red from 300k.
+tok=${tok:-0}
+if [ "$tok" -gt 0 ]; then
+    if [ "$tok" -ge 300000 ]; then c=31; elif [ "$tok" -ge 150000 ]; then c=33; else c=32; fi
+    line2[0]+=" $(paint "$c" "$(( tok / 1000 ))k")"
+fi
 
 limits=""
 if [ -n "$five" ]; then
