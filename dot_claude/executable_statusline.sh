@@ -54,11 +54,11 @@ filled=$(( (ctx + 5) / 10 ))
 bar=""
 for i in 1 2 3 4 5 6 7 8 9 10; do if [ "$i" -le "$filled" ]; then bar+="█"; else bar+="░"; fi; done
 line2=("$(paint "$(level "$ctx")" "$bar") $ctx%")
-# Context in tokens: every turn re-sends all of it. Yellow from 150k (MyAgentKit's hand-off/compact
+# Context in tokens: every turn re-sends all of it. Yellow from 200k (MyAgentKit's hand-off/compact
 # line), red from 300k.
 tok=${tok:-0}
 if [ "$tok" -gt 0 ]; then
-    if [ "$tok" -ge 300000 ]; then c=31; elif [ "$tok" -ge 150000 ]; then c=33; else c=32; fi
+    if [ "$tok" -ge 300000 ]; then c=31; elif [ "$tok" -ge 200000 ]; then c=33; else c=32; fi
     line2[0]+=" $(paint "$c" "$(( tok / 1000 ))k")"
 fi
 
