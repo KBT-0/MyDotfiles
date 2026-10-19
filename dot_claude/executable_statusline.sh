@@ -62,6 +62,13 @@ if [ "$tok" -gt 0 ]; then
     line2[0]+=" $(paint "$c" "$(( tok / 1000 ))k")"
 fi
 
+# MyAgentKit lead budget guard: the latest limits go to a file the lead reads before each round
+# (handoff rule: stop at a clean point above the owner's weekly threshold). Written only on change.
+rl_json=$(jq -c '.rate_limits // empty' <<<"$input")
+if [ -n "$rl_json" ] && [ "$(cat "$HOME/.claude/rate-limits.json" 2>/dev/null)" != "$rl_json" ]; then
+    printf '%s' "$rl_json" > "$HOME/.claude/rate-limits.json"
+fi
+
 limits=""
 if [ -n "$five" ]; then
     five=$(int "$five")

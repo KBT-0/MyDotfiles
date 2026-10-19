@@ -49,6 +49,13 @@ if ($tok -gt 0) { $line2[0] += ' ' + (Paint $(if ($tok -ge 300000) { '31' } else
 
 $five = $d.rate_limits.five_hour
 $week = $d.rate_limits.seven_day
+# MyAgentKit lead budget guard: the latest limits go to a file the lead reads before each round
+# (handoff rule: stop at a clean point above the owner's weekly threshold). Written only on change.
+if ($d.rate_limits) {
+    $rl = Join-Path $HOME '.claude/rate-limits.json'
+    $json = $d.rate_limits | ConvertTo-Json -Compress
+    if ((Get-Content -LiteralPath $rl -Raw -ErrorAction SilentlyContinue) -ne $json) { Set-Content -LiteralPath $rl -Value $json -NoNewline }
+}
 if ($five -or $week) {
     $limits = @()
     if ($five) { $limits += (Paint (Level $five.used_percentage) "5h $([int]$five.used_percentage)%") + (Paint '2' "  $(ResetIn $five.resets_at)") }
