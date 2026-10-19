@@ -1,0 +1,7 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* Only touch the theme: the rest of settings.json (profile GUIDs etc.) is machine-local.
+       "never" hides the tab X so switching tabs can't close one by mistake; close with Ctrl+Shift+W or middle-click. */ -}}
+{{- $s := dict -}}
+{{- if .chezmoi.stdin }}{{ $s = fromJson .chezmoi.stdin }}{{ end -}}
+{{- $theme := dict "name" "dark-noclose" "window" (dict "applicationTheme" "dark") "tab" (dict "showCloseButton" "never") -}}
+{{- $s | setValueAtPath "theme" "dark-noclose" | setValueAtPath "themes" (list $theme) | toPrettyJson -}}
