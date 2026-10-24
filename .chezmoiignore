@@ -21,3 +21,9 @@ AppData
 Documents
 Documents/PowerShell/**
 {{ end }}
+
+# Linux-only (Hyprland); never apply on macOS/Windows.
+{{ if ne .chezmoi.os "linux" }}
+.config/hypr
+.config/hypr/**
+{{ end }}
