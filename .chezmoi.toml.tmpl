@@ -1,0 +1,12 @@
+{{- /* Per-machine modules, asked once on `chezmoi init`. */ -}}
+{{- $shell := "pwsh" -}}
+{{- if ne .chezmoi.os "windows" -}}
+{{-   $shell = promptChoiceOnce . "shell" "Interactive shell module" (list "fish" "zsh") (ternary "zsh" "fish" (eq .chezmoi.os "darwin")) -}}
+{{- end -}}
+{{- $desktop := "none" -}}
+{{- if eq .chezmoi.os "linux" -}}
+{{-   $desktop = promptChoiceOnce . "desktop" "Desktop module" (list "hyprland-noctalia" "none") "hyprland-noctalia" -}}
+{{- end -}}
+[data]
+    shell = {{ $shell | quote }}
+    desktop = {{ $desktop | quote }}

@@ -27,3 +27,35 @@ Documents/PowerShell/**
 .config/hypr
 .config/hypr/**
 {{ end }}
+
+# Archived configs kept for reference only; never applied.
+archive
+archive/**
+
+# Desktop module: Hyprland + Noctalia (CachyOS). Only where chosen on `chezmoi init`.
+{{ if ne .desktop "hyprland-noctalia" }}
+.config/hypr
+.config/hypr/**
+.config/noctalia
+.config/noctalia/**
+.config/kitty
+.config/kitty/**
+.config/uwsm
+.config/uwsm/**
+.config/gtk-3.0
+.config/gtk-3.0/**
+.config/gtk-4.0
+.config/gtk-4.0/**
+.config/qt6ct
+.config/qt6ct/**
+.config/btop
+.config/btop/**
+.config/environment.d
+.config/environment.d/**
+{{ end }}
+
+# Shell module.
+{{ if ne .shell "fish" }}
+.config/fish
+.config/fish/**
+{{ end }}
