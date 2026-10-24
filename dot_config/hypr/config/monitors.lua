@@ -13,7 +13,7 @@ hl.monitor({
 -- KTC H24V27
 hl.monitor({
     output    = MONITOR2,
-    mode      = "1920x1080@100",
+    mode      = "1920x1080@99.65", -- the KTC's own EDID timing; "@100" picked a kernel GTF timing that left image retention
     position  = "1920x0",
     scale     = "1",
 })

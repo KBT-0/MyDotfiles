@@ -1,0 +1,40 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* Only the shared keys are managed; machine-local ones (env, autoMode, ...) stay untouched. */ -}}
+{{- $s := dict -}}
+{{- if .chezmoi.stdin }}{{ $s = fromJson .chezmoi.stdin }}{{ end -}}
+{{- $statusline := printf "bash %s/.claude/statusline.sh" .chezmoi.homeDir -}}
+{{- if eq .chezmoi.os "windows" }}{{ $statusline = printf "pwsh -NoProfile -NoLogo -File %s/.claude/statusline.ps1" .chezmoi.homeDir }}{{ end -}}
+{{- $shared := `{
+  "permissions": { "defaultMode": "auto" },
+  "model": "opus",
+  "enableWorkflows": true,
+  "statusLine": { "type": "command", "refreshInterval": 3 },
+  "enabledPlugins": {
+    "caveman@caveman": true,
+    "ponytail@ponytail": true,
+    "cc-plugin-you-should-know@builtin": true,
+    "frontend-design@claude-plugins-official": true,
+    "myagentkit@myagentkit": true
+  },
+  "extraKnownMarketplaces": {
+    "ponytail": { "source": { "source": "github", "repo": "DietrichGebert/ponytail" } },
+    "myagentkit": { "source": { "source": "github", "repo": "KBT-0/MyAgentKit_Keel" } }
+  },
+  "language": "Turkish",
+  "effortLevel": "low",
+  "modelSettings": {
+    "claude-opus-5-5": { "effortLevel": "high" },
+    "claude-fable-5-1": { "effortLevel": "high" },
+    "claude-opus-5": { "effortLevel": "medium" }
+  },
+  "tui": "fullscreen",
+  "skipWorkflowUsageWarning": true,
+  "theme": "dark",
+  "autoCompactEnabled": true,
+  "switchModelsOnFlag": false,
+  "autoContinueAtUsageLimit": true,
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true
+}` | fromJson -}}
+{{- $shared = setValueAtPath "statusLine.command" $statusline $shared -}}
+{{- mergeOverwrite $s $shared | toPrettyJson -}}

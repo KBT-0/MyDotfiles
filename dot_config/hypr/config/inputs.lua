@@ -2,8 +2,10 @@
 
 hl.config({
     input = {
-        -- sensitivity = -0.25,
-        accel_profile = "flat",
+        -- Windows'taki gibi: "enhance pointer precision" açık ≈ adaptive; temporarily faster until the real values are known
+        sensitivity = 0.2,
+        accel_profile = "adaptive",
+        scroll_factor = 2.0, -- mouse wheel (touchpad has its own below)
         kb_layout = "tr",
         -- From the old KooL setup: faster key repeat
         repeat_rate = 50,
