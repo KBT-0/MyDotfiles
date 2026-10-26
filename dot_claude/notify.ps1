@@ -1,5 +1,7 @@
 # Claude Code hook (Windows): notify only when Claude is really waiting on you.
 # Claude Code writes the returned terminalSequence to the terminal itself.
+# Windows consoles default to an OEM code page; hook JSON is UTF-8 both ways.
+[Console]::InputEncoding = [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 $in = [Console]::In.ReadToEnd() | ConvertFrom-Json
 if ($in.hook_event_name -eq 'UserPromptSubmit') { exit 0 }
 
