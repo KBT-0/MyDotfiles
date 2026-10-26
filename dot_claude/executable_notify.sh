@@ -29,11 +29,17 @@ title="Claude · $(basename "$(q .cwd)") — $what"
 body=$(printf '%s' "$body" | tr '\n\t' '  ' | tr -d '\000-\037'); body=${body:0:140}
 
 if [ -n "$KITTY_WINDOW_ID" ]; then
-  # o=unfocused: kitty stays quiet if you are already looking at this window; same id replaces the old one.
+  # Looking at this window already: no popup, no sound. kitty's own o=unfocused also hid it
+  # from a sibling tab, so ask kitty directly when remote control is on; same id replaces the old one.
+  when=unfocused
+  if [ -n "$KITTY_LISTEN_ON" ] && ls_json=$(kitty @ ls --match "id:$KITTY_WINDOW_ID" 2>/dev/null); then
+    jq -e 'any(.[].tabs[].windows[]; .is_focused)' <<<"$ls_json" >/dev/null && exit 0
+    when=always
+  fi
   # f/n/p=icon: shown as "Claude" with the Claude icon instead of kitty's (g caches the icon in kitty).
   b64() { base64 | tr -d '\n'; }
-  seq=$(printf '\033]99;i=%s:d=0:o=unfocused:a=focus:f=%s:n=%s:g=claude-notify-icon;%s\033\\\033]99;i=%s:d=0:p=body;%s\033\\' \
-    "$id" "$(printf Claude | b64)" "$(printf claude | b64)" "$title" "$id" "$body")
+  seq=$(printf '\033]99;i=%s:d=0:o=%s:a=focus:f=%s:n=%s:g=claude-notify-icon;%s\033\\\033]99;i=%s:d=0:p=body;%s\033\\' \
+    "$id" "$when" "$(printf Claude | b64)" "$(printf claude | b64)" "$title" "$id" "$body")
   icon="$HOME/.claude/notify-icon.png"
   [ -f "$icon" ] && seq+=$(printf '\033]99;i=%s:d=0:p=icon:e=1;%s\033\\' "$id" "$(b64 <"$icon")")
   seq+=$(printf '\033]99;i=%s:d=1;\033\\' "$id")

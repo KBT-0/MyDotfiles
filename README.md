@@ -293,8 +293,11 @@ when Claude is really waiting on you:
 - A bell marks the waiting tab: 🔔 in kitty (`bell_on_tab`), the bell icon in
   Windows Terminal. Switching to the tab clears it.
 - kitty only: the notification shows up as **Claude** with the Claude icon
-  (`~/.claude/notify-icon.png`) instead of kitty's. It stays quiet if you are already
-  looking at that window (`o=unfocused`), and clicking it (or, in Noctalia, its
+  (`~/.claude/notify-icon.png`) instead of kitty's. No popup and no sound if you are
+  already looking at that window: the hook asks kitty over its local
+  remote-control socket (`allow_remote_control socket-only`), because kitty's
+  own `o=unfocused` also swallowed popups while you were in a sibling tab.
+  Clicking it (or, in Noctalia, its
   action button) jumps to the tab where Claude is waiting. Each session reuses one
   notification, which closes when you send your next message.
 - Hyprland: `focus_on_activate` is enabled for kitty only, so that jump also
