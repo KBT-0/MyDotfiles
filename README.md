@@ -283,10 +283,10 @@ when Claude is really waiting on you:
 | A permission prompt is waiting | *Claude · project — İzin bekliyor* |
 | The turn ended and nothing will resume it | *Claude · project — Cevabını bekliyor* + start of the last message |
 
-- No notification while a subagent, workflow, teammate, cloud session or
-  one-shot wakeup is still in flight, because Claude resumes by itself. Long-lived
-  shell/monitor tasks (dev server, `tail -f`) and recurring `/loop` crons don't
-  suppress it.
+- No "waiting" notification while any background task (shell command,
+  subagent, workflow, monitor...) or scheduled wakeup is still in flight, because
+  Claude resumes by itself. A never-ending one (dev server, `/loop`) therefore
+  keeps that session quiet; its questions and permission prompts still notify.
 - Background sessions (`claude --bg`, run by the Claude daemon) stay silent:
   they have no terminal to show a popup in, so only their sound would arrive.
 - The hook returns the escape sequence in `terminalSequence`, so Claude Code

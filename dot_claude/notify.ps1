@@ -7,11 +7,8 @@ if ($in.hook_event_name -eq 'UserPromptSubmit') { exit 0 }
 
 switch ($in.hook_event_name) {
     'Stop' {
-        # Agent-type work or a one-shot wakeup will resume the turn: not waiting on you.
-        # Shell/monitor tasks and recurring crons may never end (dev server, /loop), so they don't suppress.
-        $agents = @($in.background_tasks | Where-Object { $_.type -match 'subagent|workflow|teammate|cloud session|MCP task' })
-        $wakeups = @($in.session_crons | Where-Object { -not $_.recurring })
-        if ($agents.Count + $wakeups.Count -gt 0) { exit 0 }
+        # Any background task or scheduled wakeup will resume the turn: not waiting on you.
+        if (@($in.background_tasks | Where-Object { $_ }).Count + @($in.session_crons | Where-Object { $_ }).Count -gt 0) { exit 0 }
         $what = 'Cevabını bekliyor'; $body = $in.last_assistant_message
     }
     'PreToolUse' { $what = 'Soru soruyor'; $body = $in.tool_input.questions[0].question }

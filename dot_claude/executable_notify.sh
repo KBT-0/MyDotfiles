@@ -24,10 +24,9 @@ fi
 
 case "$event" in
   Stop)
-    # Agent-type work or a one-shot wakeup will resume the turn: not waiting on you.
-    # Shell/monitor tasks and recurring crons may never end (dev server, /loop), so they don't suppress.
-    [ "$(jq '[(.background_tasks // [])[] | select(.type | test("subagent|workflow|teammate|cloud session|MCP task"))]
-      + [(.session_crons // [])[] | select(.recurring | not)] | length' <<<"$input")" = 0 ] || exit 0
+    # Any background task or scheduled wakeup will resume the turn: not waiting on you.
+    # shortcut: a never-ending task (dev server, /loop) also silences this for its session; questions and permission prompts still notify.
+    [ "$(jq '(.background_tasks // []) + (.session_crons // []) | length' <<<"$input")" = 0 ] || exit 0
     what="Cevabını bekliyor"; body=$(q .last_assistant_message) ;;
   PreToolUse) what="Soru soruyor"; body=$(q '.tool_input.questions[0].question') ;;
   *) what="İzin bekliyor"; body=$(q .message) ;;
