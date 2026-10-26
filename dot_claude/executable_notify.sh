@@ -4,6 +4,14 @@
 input=$(cat)
 q() { jq -r "$1 // empty" <<<"$input"; }
 
+# Background sessions (claude --bg daemon) have no terminal anywhere up the process tree:
+# no popup could reach you, and their sound was the "blip" with no notification. Stay silent.
+p=$PPID
+while [ "${p:-1}" -gt 1 ]; do
+  case "$(ps -o tty= -p "$p" 2>/dev/null | tr -d ' ')" in ''|'?'|'??') p=$(ps -o ppid= -p "$p" | tr -d ' ') ;; *) break ;; esac
+done
+[ "${p:-1}" -gt 1 ] || exit 0
+
 event=$(q .hook_event_name)
 id=$(q .session_id | tr -cd 'a-zA-Z0-9-')
 emit() { jq -nc --arg seq "$1" '{terminalSequence: $seq}'; }

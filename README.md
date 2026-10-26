@@ -287,6 +287,8 @@ when Claude is really waiting on you:
   one-shot wakeup is still in flight, because Claude resumes by itself. Long-lived
   shell/monitor tasks (dev server, `tail -f`) and recurring `/loop` crons don't
   suppress it.
+- Background sessions (`claude --bg`, run by the Claude daemon) stay silent:
+  they have no terminal to show a popup in, so only their sound would arrive.
 - The hook returns the escape sequence in `terminalSequence`, so Claude Code
   writes it to the right terminal itself: kitty (OSC 99), Ghostty/Warp
   (OSC 777), Windows Terminal/WezTerm/iTerm2 (OSC 9). It also works over SSH and in tmux.
