@@ -308,7 +308,7 @@ when Claude is really waiting on you:
 - Other terminals play the sound (`~/.claude/notify.wav`) from the hook via
   `pw-play`/`paplay`/`afplay` or PowerShell's `SoundPlayer`, focused or not. The sound is KDE
   Ocean's `completion-rotation` (CC-BY-SA-4.0, Guilherme Marçal Silva; nothing on a Hyprland desktop plays it otherwise),
-  levelled to -18 LUFS, like Windows 11's default notification. kitty's own audio bell is off so it doesn't beep twice.
+  levelled to -20 LUFS, between Windows 11's default and messaging notifications. kitty's own audio bell is off so it doesn't beep twice.
 - Phone push notifications over Remote Control (`inputNeededNotifEnabled`,
   `agentPushNotifEnabled`) stay on; they are separate from these.
 
