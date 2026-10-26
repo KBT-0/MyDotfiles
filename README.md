@@ -301,12 +301,10 @@ when Claude is really waiting on you:
   focused OS window); a sibling tab, another workspace or another app gets both.
   kitty plays the sound itself (`s=claude-notify`, libcanberra) only when it really
   shows the popup, so `~/.local/share/sounds/freedesktop/stereo/claude-notify.wav`
-  links to `~/.claude/notify.wav`. Clicking the popup (or, in Noctalia, its
-  action button) jumps to the tab where Claude is waiting. Each session reuses one
+  links to `~/.claude/notify.wav`. The popup never moves focus to the terminal
+  (no `a=focus`): it pulled you out of another workspace. Each session reuses one
   notification, which closes when you send your next message.
-- Hyprland: `focus_on_activate` is enabled for kitty only, so that jump also
-  works across workspaces. `Super+N` invokes the latest notification while its
-  popup is still on screen.
+- Hyprland: `Super+N` invokes the latest notification while its popup is still on screen.
 - Other terminals play the short, soft sound (`~/.claude/notify.wav`) from the hook via
   `pw-play`/`paplay`/`afplay` or PowerShell's `SoundPlayer`, focused or not. It is levelled to -26.9 LUFS, the same as the
   freedesktop `message-new-instant` notification sound. kitty's own audio bell is off so it

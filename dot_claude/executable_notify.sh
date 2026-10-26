@@ -38,9 +38,10 @@ if [ -n "$KITTY_WINDOW_ID" ]; then
   # s=: kitty plays the sound itself, only when it really shows the popup (libcanberra looks the
   # name up in ~/.local/share/sounds/freedesktop/stereo/claude-notify.wav). Same id replaces the
   # session's previous notification. f/n: shown as "Claude" with the Claude icon; n is a file path.
+  # No a=focus: it yanked you to the terminal from another workspace.
   # Never inline the icon data (p=icon): Claude Code silently drops a terminalSequence that large.
   b64() { base64 | tr -d '\n'; }
-  seq=$(printf '\033]99;i=%s:d=0:o=unfocused:a=focus:s=%s:f=%s:n=%s;%s\033\\\033]99;i=%s:d=0:p=body;%s\033\\' \
+  seq=$(printf '\033]99;i=%s:d=0:o=unfocused:s=%s:f=%s:n=%s;%s\033\\\033]99;i=%s:d=0:p=body;%s\033\\' \
     "$id" "$(printf claude-notify | b64)" "$(printf Claude | b64)" "$(printf %s "$HOME/.claude/notify-icon.png" | b64)" "$title" "$id" "$body")
   seq+=$(printf '\033]99;i=%s:d=1;\033\\' "$id")
   emit "$seq$(printf '\a')"
