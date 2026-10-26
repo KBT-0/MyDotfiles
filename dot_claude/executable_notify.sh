@@ -42,12 +42,11 @@ if [ -n "$KITTY_WINDOW_ID" ]; then
   # The same id replaces this session's previous notification.
   [ -n "$KITTY_LISTEN_ON" ] && kitty @ ls --match "id:$KITTY_WINDOW_ID" 2>/dev/null |
     jq -e 'any(.[].tabs[].windows[]; .is_focused)' >/dev/null && exit 0
-  # f/n/p=icon: shown as "Claude" with the Claude icon instead of kitty's (g caches the icon in kitty).
+  # f/n: shown as "Claude" with the Claude icon; n is a file path kitty passes on as-is.
+  # Never inline the icon data (p=icon): Claude Code silently drops a terminalSequence that large.
   b64() { base64 | tr -d '\n'; }
-  seq=$(printf '\033]99;i=%s:d=0:o=always:a=focus:f=%s:n=%s:g=claude-notify-icon;%s\033\\\033]99;i=%s:d=0:p=body;%s\033\\' \
-    "$id" "$(printf Claude | b64)" "$(printf claude | b64)" "$title" "$id" "$body")
-  icon="$HOME/.claude/notify-icon.png"
-  [ -f "$icon" ] && seq+=$(printf '\033]99;i=%s:d=0:p=icon:e=1;%s\033\\' "$id" "$(b64 <"$icon")")
+  seq=$(printf '\033]99;i=%s:d=0:o=always:a=focus:f=%s:n=%s;%s\033\\\033]99;i=%s:d=0:p=body;%s\033\\' \
+    "$id" "$(printf Claude | b64)" "$(printf %s "$HOME/.claude/notify-icon.png" | b64)" "$title" "$id" "$body")
   seq+=$(printf '\033]99;i=%s:d=1;\033\\' "$id")
 elif [ "$TERM_PROGRAM" = ghostty ] || [ "$TERM_PROGRAM" = WarpTerminal ]; then
   seq=$(printf '\033]777;notify;%s;%s\007' "${title//;/,}" "${body//;/,}")
