@@ -11,8 +11,13 @@ switch ($in.hook_event_name) {
         if (@($in.background_tasks | Where-Object { $_ }).Count + @($in.session_crons | Where-Object { $_ }).Count -gt 0) { exit 0 }
         $what = 'Cevabını bekliyor'; $body = $in.last_assistant_message
     }
-    'PreToolUse' { $what = 'Soru soruyor'; $body = $in.tool_input.questions[0].question }
-    default { $what = 'İzin bekliyor'; $body = $in.message }
+    # A question is also a "permission prompt" to Claude Code (6 s later): remember it, skip that echo.
+    'PreToolUse' { New-Item -Force (Join-Path $env:TEMP "claude-question-$($in.session_id)") | Out-Null; $what = 'Soru soruyor'; $body = $in.tool_input.questions[0].question }
+    default {
+        $stamp = Join-Path $env:TEMP "claude-question-$($in.session_id)"
+        if ((Test-Path $stamp) -and (Get-Item $stamp).LastWriteTime -gt (Get-Date).AddSeconds(-15)) { exit 0 }
+        $what = 'İzin bekliyor'; $body = $in.message
+    }
 }
 
 $title = "Claude · $(Split-Path -Leaf $in.cwd) — $what"

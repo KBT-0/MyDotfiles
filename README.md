@@ -280,7 +280,7 @@ when Claude is really waiting on you:
 | When | Notification |
 |---|---|
 | Claude asks a question (`AskUserQuestion`) | *Claude · project — Soru soruyor* + the question |
-| A permission prompt is waiting | *Claude · project — İzin bekliyor* |
+| A permission prompt is waiting | *Claude · project — İzin bekliyor* (not for the `permission_prompt` Claude Code also sends 6 s after a question) |
 | The turn ended and nothing will resume it | *Claude · project — Cevabını bekliyor* + start of the last message |
 
 - No "waiting" notification while any background task (shell command,

@@ -23,8 +23,10 @@ case "$event" in
     # shortcut: a never-ending task (dev server, /loop) also silences this for its session; questions and permission prompts still notify.
     [ "$(jq '(.background_tasks // []) + (.session_crons // []) | length' <<<"$input")" = 0 ] || exit 0
     what="Cevabını bekliyor"; body=$(q .last_assistant_message) ;;
-  PreToolUse) what="Soru soruyor"; body=$(q '.tool_input.questions[0].question') ;;
-  *) what="İzin bekliyor"; body=$(q .message) ;;
+  # A question is also a "permission prompt" to Claude Code (6 s later): remember it, skip that echo.
+  PreToolUse) touch "${TMPDIR:-/tmp}/claude-question-$id"; what="Soru soruyor"; body=$(q '.tool_input.questions[0].question') ;;
+  *) [ -n "$(find "${TMPDIR:-/tmp}/claude-question-$id" -newermt '-15 seconds' 2>/dev/null)" ] && exit 0
+     what="İzin bekliyor"; body=$(q .message) ;;
 esac
 
 title="Claude · $(basename "$(q .cwd)") — $what"
