@@ -169,3 +169,14 @@ color = "secondary"
 
     [widget.home_button.actions]
     left = "exec noctalia msg panel-toggle control-center home"
+
+# Claude bildirimleri kendi sesini kitty üzerinden çalar (~/.claude/notify.wav): Noctalia'nınki ikinci kez çalmasın.
+# Diğer uygulamaların (Discord vb.) bildirim sesi aynen kalır.
+[notification]
+filter_order = ["claude"]
+
+[notification.filter.claude]
+enabled    = true
+match      = "Claude"
+show_toast = true
+play_sound = false

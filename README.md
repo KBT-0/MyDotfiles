@@ -305,6 +305,9 @@ when Claude is really waiting on you:
   (no `a=focus`): it pulled you out of another workspace. Each session reuses one
   notification, which closes when you send your next message.
 - Hyprland: `Super+N` invokes the latest notification while its popup is still on screen.
+- Noctalia: a notification filter (`[notification.filter.claude]`, `play_sound = false`)
+  keeps Noctalia from playing its own sound on top of Claude's; every other app's
+  notification sound is unchanged.
 - Other terminals play the sound (`~/.claude/notify.wav`) from the hook via
   `pw-play`/`paplay`/`afplay` or PowerShell's `SoundPlayer`, focused or not. The sound is KDE
   Ocean's `completion-rotation` (CC-BY-SA-4.0, Guilherme Marçal Silva; nothing on a Hyprland desktop plays it otherwise),
