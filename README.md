@@ -296,7 +296,8 @@ when Claude is really waiting on you:
   (`~/.claude/notify-icon.png`) instead of kitty's. No popup and no sound if you are
   already looking at that window: the hook asks kitty over its local
   remote-control socket (`allow_remote_control socket-only`), because kitty's
-  own `o=unfocused` also swallowed popups while you were in a sibling tab.
+  own `o=unfocused` also swallowed popups while you were in a sibling tab. A
+  kitty started before this setting has no socket, so it always notifies until restarted.
   Clicking it (or, in Noctalia, its
   action button) jumps to the tab where Claude is waiting. Each session reuses one
   notification, which closes when you send your next message.
