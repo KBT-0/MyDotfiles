@@ -319,6 +319,10 @@ Linux/macOS/WSL run `~/.claude/notify.sh` (`bash`, `jq`); Windows runs
 `~/.claude/notify.ps1`. None of it adds tokens: the hooks print nothing into
 Claude's context.
 
+Codex's `~/.codex/config.toml` is merged the same way as Claude's settings: the repo
+manages only the shared keys (model, effort, plugins, status line...), and what
+Codex writes itself, such as each machine's trusted projects, stays untouched.
+
 Codex cannot run a status line command. It uses Codex's native
 `tui.status_line` configuration instead; this repo enables model and
 reasoning, context remaining, five-hour and weekly limits, run/task state, and

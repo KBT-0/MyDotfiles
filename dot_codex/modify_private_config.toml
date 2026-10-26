@@ -1,5 +1,8 @@
-model = "gpt-5.6-sol"
-model_reasoning_effort = "high"
+{{- /* chezmoi:modify-template */ -}}
+{{- /* Only the shared keys are managed; machine-local ones (projects trust, ...) that Codex writes itself stay untouched. */ -}}
+{{- $s := dict -}}
+{{- if .chezmoi.stdin }}{{ $s = fromToml .chezmoi.stdin }}{{ end -}}
+{{- $shared := `model = "gpt-6.1-sol"
 personality = "pragmatic"
 approvals_reviewer = "user"
 plan_mode_reasoning_effort = "xhigh"
@@ -12,6 +15,8 @@ memories = true
 status_line = ["model-with-reasoning", "context-remaining", "five-hour-limit", "weekly-limit", "run-state", "task-progress", "approval-mode"]
 status_line_use_colors = true
 terminal_title = ["thread-title", "project-name"]
+# Codex asks once whether you use a screen reader; answered.
+screen_reader_detection_done = true
 
 [plugins."clickup@openai-curated"]
 enabled = true
@@ -30,3 +35,7 @@ wire_api = "responses"
 stream_idle_timeout_ms = 7200000
 stream_max_retries = 5
 request_max_retries = 4
+` | fromToml -}}
+{{- /* Mac: medium, everywhere else: high. */ -}}
+{{- $shared = setValueAtPath "model_reasoning_effort" (ternary "medium" "high" (eq .chezmoi.os "darwin")) $shared -}}
+{{- mergeOverwrite $s $shared | toToml -}}
