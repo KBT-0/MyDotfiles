@@ -4,8 +4,9 @@
 input=$(cat)
 q() { jq -r "$1 // empty" <<<"$input"; }
 
-# Background sessions (claude --bg daemon) have no terminal you look at: stay silent.
-[ "$CLAUDE_CODE_SESSION_KIND" = bg ] && exit 0
+# No terminal you look at (daemon-spawned bg/worker/teammate sessions have a pty but no
+# terminal emulator around it): no popup could reach you, so stay silent, no sound either.
+[ -n "$KITTY_WINDOW_ID$TERM_PROGRAM$WT_SESSION$TMUX" ] || exit 0
 
 event=$(q .hook_event_name)
 id=$(q .session_id | tr -cd 'a-zA-Z0-9-')

@@ -287,8 +287,9 @@ when Claude is really waiting on you:
   subagent, workflow, monitor...) or scheduled wakeup is still in flight, because
   Claude resumes by itself. A never-ending one (dev server, `/loop`) therefore
   keeps that session quiet; its questions and permission prompts still notify.
-- Background sessions (`claude --bg`, run by the Claude daemon,
-  `CLAUDE_CODE_SESSION_KIND=bg`) stay silent: you are not looking at their terminal.
+- Sessions without a terminal emulator around them (`claude --bg`, daemon-spawned
+  workers and teammates: a pty, but no `KITTY_WINDOW_ID`/`TERM_PROGRAM`/`WT_SESSION`/`TMUX`)
+  stay silent, sound included: no popup could reach you.
 - The hook returns the escape sequence in `terminalSequence`, so Claude Code
   writes it to the right terminal itself: kitty (OSC 99), Ghostty/Warp
   (OSC 777), Windows Terminal/WezTerm/iTerm2 (OSC 9). It also works over SSH and in tmux.

@@ -4,6 +4,8 @@
 [Console]::InputEncoding = [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 $in = [Console]::In.ReadToEnd() | ConvertFrom-Json
 if ($in.hook_event_name -eq 'UserPromptSubmit') { exit 0 }
+# No terminal you look at (daemon-spawned sessions): stay silent.
+if (-not ($env:WT_SESSION -or $env:TERM_PROGRAM)) { exit 0 }
 
 switch ($in.hook_event_name) {
     'Stop' {
