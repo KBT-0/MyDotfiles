@@ -287,27 +287,27 @@ when Claude is really waiting on you:
   subagent, workflow, monitor...) or scheduled wakeup is still in flight, because
   Claude resumes by itself. A never-ending one (dev server, `/loop`) therefore
   keeps that session quiet; its questions and permission prompts still notify.
-- Background sessions (`claude --bg`, run by the Claude daemon) stay silent:
-  they have no terminal to show a popup in, so only their sound would arrive.
+- Background sessions (`claude --bg`, run by the Claude daemon,
+  `CLAUDE_CODE_SESSION_KIND=bg`) stay silent: you are not looking at their terminal.
 - The hook returns the escape sequence in `terminalSequence`, so Claude Code
   writes it to the right terminal itself: kitty (OSC 99), Ghostty/Warp
   (OSC 777), Windows Terminal/WezTerm/iTerm2 (OSC 9). It also works over SSH and in tmux.
 - A bell marks the waiting tab: 🔔 in kitty (`bell_on_tab`), the bell icon in
   Windows Terminal. Switching to the tab clears it.
 - kitty only: the notification shows up as **Claude** with the Claude icon
-  (`~/.claude/notify-icon.png`) instead of kitty's. No popup and no sound if you are
-  already looking at that window: the hook asks kitty over its local
-  remote-control socket (`allow_remote_control socket-only`), because kitty's
-  own `o=unfocused` also swallowed popups while you were in a sibling tab. A
-  kitty started before this setting has no socket, so it always notifies until restarted.
-  Clicking it (or, in Noctalia, its
+  (`~/.claude/notify-icon.png`) instead of kitty's. No popup and no sound while you
+  are looking at that window (`o=unfocused`: kitty checks the active tab of the
+  focused OS window); a sibling tab, another workspace or another app gets both.
+  kitty plays the sound itself (`s=claude-notify`, libcanberra) only when it really
+  shows the popup, so `~/.local/share/sounds/freedesktop/stereo/claude-notify.wav`
+  links to `~/.claude/notify.wav`. Clicking the popup (or, in Noctalia, its
   action button) jumps to the tab where Claude is waiting. Each session reuses one
   notification, which closes when you send your next message.
 - Hyprland: `focus_on_activate` is enabled for kitty only, so that jump also
   works across workspaces. `Super+N` invokes the latest notification while its
   popup is still on screen.
-- A short, soft sound (`~/.claude/notify.wav`) plays via `pw-play`/`paplay`/`afplay`
-  or PowerShell's `SoundPlayer`. It is levelled to -26.9 LUFS, the same as the
+- Other terminals play the short, soft sound (`~/.claude/notify.wav`) from the hook via
+  `pw-play`/`paplay`/`afplay` or PowerShell's `SoundPlayer`, focused or not. It is levelled to -26.9 LUFS, the same as the
   freedesktop `message-new-instant` notification sound. kitty's own audio bell is off so it
   doesn't beep twice.
 - Phone push notifications over Remote Control (`inputNeededNotifEnabled`,

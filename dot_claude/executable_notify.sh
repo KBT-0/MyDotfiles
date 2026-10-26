@@ -4,13 +4,8 @@
 input=$(cat)
 q() { jq -r "$1 // empty" <<<"$input"; }
 
-# Background sessions (claude --bg daemon) have no terminal anywhere up the process tree:
-# no popup could reach you, and their sound was the "blip" with no notification. Stay silent.
-p=$PPID
-while [ "${p:-1}" -gt 1 ]; do
-  case "$(ps -o tty= -p "$p" 2>/dev/null | tr -d ' ')" in ''|'?'|'??') p=$(ps -o ppid= -p "$p" | tr -d ' ') ;; *) break ;; esac
-done
-[ "${p:-1}" -gt 1 ] || exit 0
+# Background sessions (claude --bg daemon) have no terminal you look at: stay silent.
+[ "$CLAUDE_CODE_SESSION_KIND" = bg ] && exit 0
 
 event=$(q .hook_event_name)
 id=$(q .session_id | tr -cd 'a-zA-Z0-9-')
@@ -36,24 +31,24 @@ title="Claude · $(basename "$(q .cwd)") — $what"
 body=$(printf '%s' "$body" | tr '\n\t' '  ' | tr -d '\000-\037'); body=${body:0:140}
 
 if [ -n "$KITTY_WINDOW_ID" ]; then
-  # Looking at this window already: no popup, no sound. kitty's own o=unfocused also hid it from a
-  # sibling tab, so ask kitty over its socket instead (kitty started without it: always notify).
-  # The same id replaces this session's previous notification.
-  [ -n "$KITTY_LISTEN_ON" ] && kitty @ ls --match "id:$KITTY_WINDOW_ID" 2>/dev/null |
-    jq -e 'any(.[].tabs[].windows[]; .is_focused)' >/dev/null && exit 0
-  # f/n: shown as "Claude" with the Claude icon; n is a file path kitty passes on as-is.
+  # o=unfocused: kitty drops the popup when you are looking at this window (any tab, any workspace).
+  # s=: kitty plays the sound itself, only when it really shows the popup (libcanberra looks the
+  # name up in ~/.local/share/sounds/freedesktop/stereo/claude-notify.wav). Same id replaces the
+  # session's previous notification. f/n: shown as "Claude" with the Claude icon; n is a file path.
   # Never inline the icon data (p=icon): Claude Code silently drops a terminalSequence that large.
   b64() { base64 | tr -d '\n'; }
-  seq=$(printf '\033]99;i=%s:d=0:o=always:a=focus:f=%s:n=%s;%s\033\\\033]99;i=%s:d=0:p=body;%s\033\\' \
-    "$id" "$(printf Claude | b64)" "$(printf %s "$HOME/.claude/notify-icon.png" | b64)" "$title" "$id" "$body")
+  seq=$(printf '\033]99;i=%s:d=0:o=unfocused:a=focus:s=%s:f=%s:n=%s;%s\033\\\033]99;i=%s:d=0:p=body;%s\033\\' \
+    "$id" "$(printf claude-notify | b64)" "$(printf Claude | b64)" "$(printf %s "$HOME/.claude/notify-icon.png" | b64)" "$title" "$id" "$body")
   seq+=$(printf '\033]99;i=%s:d=1;\033\\' "$id")
+  emit "$seq$(printf '\a')"
+  exit 0
 elif [ "$TERM_PROGRAM" = ghostty ] || [ "$TERM_PROGRAM" = WarpTerminal ]; then
   seq=$(printf '\033]777;notify;%s;%s\007' "${title//;/,}" "${body//;/,}")
 else
   # Windows Terminal, WezTerm, iTerm2
   seq=$(printf '\033]9;%s: %s\007' "$title" "$body")
 fi
-# Bare BEL marks the tab (kitty bell_on_tab, Windows Terminal tab bell icon).
+# Bare BEL marks the tab (Windows Terminal tab bell icon).
 emit "$seq$(printf '\a')"
 
 sound="$HOME/.claude/notify.wav"
