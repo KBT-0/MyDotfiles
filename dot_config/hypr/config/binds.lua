@@ -119,8 +119,11 @@ hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd(noctCall .. "brightness-down"),
 
 -- Screen Capture
 hl.bind(mainMod .. " + P",     hl.dsp.exec_cmd("hyprpicker -a -n"))
-hl.bind("Print",               hl.dsp.exec_cmd(noctCall .. "screenshot-region"))
-hl.bind(mainMod .. " + Print", hl.dsp.exec_cmd(noctCall .. "screenshot-fullscreen"))
+-- Windows-style: Win+Shift+S region, PrtSc full, Win+PrtSc save to file, Alt+PrtSc window; all copy to clipboard
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd([[sh -c 'grim -g "$(slurp)" - | wl-copy && notify-send "Ekran görüntüsü" "Bölge panoya kopyalandı"']]))
+hl.bind("Print",               hl.dsp.exec_cmd([[sh -c 'grim - | wl-copy && notify-send "Ekran görüntüsü" "Tüm ekran panoya kopyalandı"']]))
+hl.bind(mainMod .. " + Print", hl.dsp.exec_cmd([[sh -c 'mkdir -p ~/Pictures/Screenshots; f=~/Pictures/Screenshots/$(date +%Y-%m-%d_%H-%M-%S).png; grim "$f" && wl-copy < "$f" && notify-send "Ekran görüntüsü" "$f"']]))
+hl.bind("ALT + Print",         hl.dsp.exec_cmd([[sh -c 'grim -g "$(hyprctl -j activewindow | jq -r "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])")" - | wl-copy && notify-send "Ekran görüntüsü" "Pencere panoya kopyalandı"']]))
 
 -- Theming and Wallpaper
 hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd(noctCall .. "panel-toggle wallpaper"))
@@ -164,7 +167,7 @@ hl.bind(mainMod .. " + CONTROL + mouse_up",   hl.dsp.focus({ workspace = "m-1" }
 hl.bind(mainMod .. " + CONTROL + mouse_down", hl.dsp.focus({ workspace = "m+1" }))
 
 -- Special workspace (scratchpad)
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special" }))
+hl.bind(mainMod .. " + SHIFT + X", hl.dsp.window.move({ workspace = "special" }))
 hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special())
 
 -- From the old KooL setup
