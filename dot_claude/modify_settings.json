@@ -3,7 +3,8 @@
 {{- $s := dict -}}
 {{- if .chezmoi.stdin }}{{ $s = fromJson .chezmoi.stdin }}{{ end -}}
 {{- $statusline := printf "bash %s/.claude/statusline.sh" .chezmoi.homeDir -}}
-{{- if eq .chezmoi.os "windows" }}{{ $statusline = printf "pwsh -NoProfile -NoLogo -File %s/.claude/statusline.ps1" .chezmoi.homeDir }}{{ end -}}
+{{- $notify := printf "bash %s/.claude/notify.sh" .chezmoi.homeDir -}}
+{{- if eq .chezmoi.os "windows" }}{{ $statusline = printf "pwsh -NoProfile -NoLogo -File %s/.claude/statusline.ps1" .chezmoi.homeDir }}{{ $notify = printf "pwsh -NoProfile -NoLogo -File %s/.claude/notify.ps1" .chezmoi.homeDir }}{{ end -}}
 {{- $shared := `{
   "permissions": { "defaultMode": "auto" },
   "model": "opus",
@@ -34,7 +35,14 @@
   "switchModelsOnFlag": false,
   "autoContinueAtUsageLimit": true,
   "inputNeededNotifEnabled": true,
-  "agentPushNotifEnabled": true
-}` | fromJson -}}
+  "agentPushNotifEnabled": true,
+  "preferredNotifChannel": "notifications_disabled",
+  "hooks": {
+    "Stop": [{ "hooks": [{ "type": "command", "command": "@NOTIFY@" }] }],
+    "PreToolUse": [{ "matcher": "AskUserQuestion", "hooks": [{ "type": "command", "command": "@NOTIFY@" }] }],
+    "Notification": [{ "matcher": "permission_prompt|elicitation_dialog", "hooks": [{ "type": "command", "command": "@NOTIFY@" }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "@NOTIFY@" }] }]
+  }
+}` | replace "@NOTIFY@" $notify | fromJson -}}
 {{- $shared = setValueAtPath "statusLine.command" $statusline $shared -}}
 {{- mergeOverwrite $s $shared | toPrettyJson -}}

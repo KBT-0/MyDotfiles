@@ -3,6 +3,9 @@
 -- Generic floating position
 hl.window_rule({ match = { float = true }, persistent_size = true })
 
+-- kitty only: clicking its notification (e.g. Claude waiting) brings the window forward, even on another workspace.
+hl.window_rule({ match = { class = "^(kitty)$" }, focus_on_activate = true })
+
 -- Picture-in-Picture
 hl.window_rule({
     match             = { title = "^([Pp]icture[-\\s]?[Ii]n[-\\s]?[Pp]icture)(.*)$" },

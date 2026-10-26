@@ -12,11 +12,13 @@ scripts/**
 
 {{ if eq .chezmoi.os "windows" }}
 .claude/statusline.sh
+.claude/notify.sh
 # Linux/macOS-only run scripts; Windows is handled by bootstrap-windows.ps1.
 10-install-zsh-tools.sh
 99-cleanup-legacy-bash-editor.sh
 {{ else }}
 .claude/statusline.ps1
+.claude/notify.ps1
 AppData
 Documents
 Documents/PowerShell/**

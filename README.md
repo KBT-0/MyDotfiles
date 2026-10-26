@@ -6,8 +6,22 @@ Cross-platform development environment configs managed with [chezmoi](https://ch
 
 **Supported platforms:**
 - 🪟 Windows (PowerShell 7)
-- 🍎 macOS (zsh)
-- 🐧 Linux (zsh)
+- 🍎 macOS (zsh or fish)
+- 🐧 Linux / WSL (zsh or fish), optionally with a Hyprland + Noctalia desktop
+
+---
+
+## Modules
+
+`chezmoi init` asks two questions once per machine and remembers the answers
+(`~/.config/chezmoi/chezmoi.toml`):
+
+| Module | Choices | What it controls |
+|---|---|---|
+| `shell` | `fish` (Linux default), `zsh` (macOS default) | Whether `~/.config/fish` is managed. Windows always uses PowerShell 7. |
+| `desktop` | `hyprland-noctalia` (default), `none` | Linux only. Hyprland, Noctalia bar, kitty, uwsm, GTK/Qt themes, btop and the ssh-agent environment. Pick `none` on WSL or servers. |
+
+Change an answer later with `chezmoi init --prompt`.
 
 ---
 
@@ -22,6 +36,10 @@ Run PowerShell as Administrator:
 ```powershell
 irm https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/bootstrap-windows.ps1 | iex
 ```
+
+The managed Windows Terminal settings only touch the theme: dark, and the tab
+close button is hidden so switching tabs can't close one (close with
+`Ctrl+Shift+W` or middle-click). Profiles and everything else stay local.
 
 Then open a new Windows Terminal PowerShell 7 tab and set the profile font to `JetBrainsMono Nerd Font`.
 
@@ -145,17 +163,25 @@ curl -fsSL https://raw.githubusercontent.com/KBT-0/MyDotfiles/main/scripts/insta
 ## What's in this repo
 
 ```
-dotfiles/
-├── home/                          # chezmoi-managed files (auto-applied)
-│   ├── dot_zshrc                  # → ~/.zshrc (macOS)
-│   ├── dot_bashrc                 # → ~/.bashrc (Linux)
-│   ├── dot_config/                # -> ~/.config/
-│   │   ├── shell/lfcd.sh
-│   │   └── starship.toml
-│   ├── dot_claude/                # Claude settings + status line (sh / ps1)
-│   ├── dot_codex/                 # Codex config, rules, and native status line
-│   └── AppData/                   # Windows-only files
-│       └── Local/...
+MyDotfiles/                        # chezmoi source dir (chezmoi cd)
+├── .chezmoi.toml.tmpl             # module questions (shell, desktop)
+├── .chezmoiignore                 # per-OS / per-module filtering
+├── dot_zshrc, dot_bashrc          # → ~/.zshrc, ~/.bashrc
+├── dot_config/                    # → ~/.config/
+│   ├── fish/                      # fish module: Oh My Posh, Atuin, direnv, fnm
+│   ├── shell/lfcd.sh
+│   ├── atuin/                     # Atuin history search config
+│   ├── nvim/                      # LazyVim-based Neovim config
+│   ├── kitty/                     # desktop module: kitty terminal
+│   ├── hypr/  noctalia/  uwsm/    # desktop module: Hyprland (Lua config), Noctalia bar
+│   ├── gtk-3.0/ gtk-4.0/ qt6ct/   # desktop module: dark GTK/Qt theme
+│   ├── btop/  environment.d/      # desktop module: btop, ssh-agent socket
+├── dot_claude/                    # Claude Code: settings (merged), CLAUDE.md, status line, notifications
+├── dot_codex/                     # Codex config, rules, and native status line
+├── AppData/                       # Windows Terminal theme (merged)
+├── readonly_Documents/PowerShell/ # Windows $PROFILE
+├── run_onchange_after_*.sh.tmpl   # installs/refreshes zsh tools on change
+├── archive/                       # old Hyprland config, reference only, never applied
 ├── scripts/                       # Standalone single-tool installers
 │   ├── bootstrap-windows.ps1
 │   ├── bootstrap-wsl.sh
@@ -174,7 +200,10 @@ dotfiles/
 └── docs/                          # Setup notes
 ```
 
-Oh My Posh uses the built-in `atomic` theme on PowerShell, bash, and zsh.
+Oh My Posh uses the built-in `atomic` theme on PowerShell, bash, zsh, and fish.
+
+The fish module keeps CachyOS's fish defaults and adds Oh My Posh, Atuin
+(`Ctrl-R`, Up Arrow), direnv, and fnm (Node version switching on `cd`).
 
 Shell history/prediction defaults:
 
@@ -232,10 +261,85 @@ run `~/.claude/statusline.sh` (`bash`, `git`, `jq`; the bootstraps install
 them). Windows runs `~/.claude/statusline.ps1` in PowerShell 7 with no extra
 dependencies.
 
+The status line also writes the current rate limits to
+`~/.claude/rate-limits.json`, so other tools (MyAgentKit's budget guard) can
+read them without calling the API.
+
+`~/.claude/settings.json` is merged, not replaced: chezmoi manages only the
+shared keys (model, effort, plugins, status line, notifications, hooks) and
+leaves machine-local ones such as `env`, `permissions.allow` and `autoMode`
+untouched. `~/.claude/CLAUDE.md` holds the global instructions.
+
+### Claude Code notifications
+
+Claude Code's own notification fires at the end of every turn, even when Claude
+will keep going (a subagent or workflow still running). The managed hooks
+replace it (`preferredNotifChannel: "notifications_disabled"`) and notify only
+when Claude is really waiting on you:
+
+| When | Notification |
+|---|---|
+| Claude asks a question (`AskUserQuestion`) | *Claude · project — Soru soruyor* + the question |
+| A permission prompt is waiting | *Claude · project — İzin bekliyor* |
+| The turn ended and nothing will resume it | *Claude · project — Cevabını bekliyor* + start of the last message |
+
+- No notification while a subagent, workflow, teammate, cloud session or
+  one-shot wakeup is still in flight, because Claude resumes by itself. Long-lived
+  shell/monitor tasks (dev server, `tail -f`) and recurring `/loop` crons don't
+  suppress it.
+- The hook returns the escape sequence in `terminalSequence`, so Claude Code
+  writes it to the right terminal itself: kitty (OSC 99), Ghostty/Warp
+  (OSC 777), Windows Terminal/WezTerm/iTerm2 (OSC 9). It also works over SSH and in tmux.
+- A bell marks the waiting tab: 🔔 in kitty (`bell_on_tab`), the bell icon in
+  Windows Terminal. Switching to the tab clears it.
+- kitty only: the notification shows up as **Claude** with the Claude icon
+  (`~/.claude/notify-icon.png`) instead of kitty's. It stays quiet if you are already
+  looking at that window (`o=unfocused`), and clicking it (or, in Noctalia, its
+  action button) jumps to the tab where Claude is waiting. Each session reuses one
+  notification, which closes when you send your next message.
+- Hyprland: `focus_on_activate` is enabled for kitty only, so that jump also
+  works across workspaces. `Super+N` invokes the latest notification while its
+  popup is still on screen.
+- A short, soft sound (`~/.claude/notify.wav`) plays via `pw-play`/`paplay`/`afplay`
+  or PowerShell's `SoundPlayer`. It is levelled to -26.9 LUFS, the same as the
+  freedesktop `message-new-instant` notification sound. kitty's own audio bell is off so it
+  doesn't beep twice.
+- Phone push notifications over Remote Control (`inputNeededNotifEnabled`,
+  `agentPushNotifEnabled`) stay on; they are separate from these.
+
+Linux/macOS/WSL run `~/.claude/notify.sh` (`bash`, `jq`); Windows runs
+`~/.claude/notify.ps1`. None of it adds tokens: the hooks print nothing into
+Claude's context.
+
 Codex cannot run a status line command. It uses Codex's native
 `tui.status_line` configuration instead; this repo enables model and
 reasoning, context remaining, five-hour and weekly limits, run/task state, and
 approval mode.
+
+---
+
+## Linux desktop (Hyprland + Noctalia)
+
+With `desktop = hyprland-noctalia`:
+
+- **Hyprland** (Lua config under `~/.config/hypr/config/`), started through uwsm.
+  `Super+A` opens the notification panel, `Super+N` jumps to the latest notification.
+  Windows-style screenshot keys: `Win+Shift+S` region, `PrtSc` all screens,
+  `Win+PrtSc` save to `~/Pictures/Screenshots`, `Alt+PrtSc` active window.
+- **Noctalia** bar in a Mac-like layout: launcher and workspaces on the left,
+  taskbar and media in the centre, tray, volume, clock and notifications on the
+  right.
+- **kitty**: tab bar on top, always visible. Windows Terminal shortcuts:
+  `Ctrl+C` copies when there is a selection and interrupts otherwise, `Ctrl+V`
+  pastes, `Ctrl+Shift+D` opens a new tab, `Ctrl+Shift+1…9` switches tabs,
+  `Alt+Shift+±/D` splits, `Alt+arrows` moves between splits, right-click
+  copies or pastes. Closing a window with a running command asks first.
+- Dark GTK 3/4 and Qt (qt6ct) theme, btop, and `SSH_AUTH_SOCK` pointing at the
+  systemd ssh-agent socket.
+
+### Neovim
+
+`~/.config/nvim` is a LazyVim setup (based on craftzdog's config) and is applied on every OS.
 
 ---
 

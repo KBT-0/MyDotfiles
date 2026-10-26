@@ -1,0 +1,27 @@
+# Claude Code hook (Windows): notify only when Claude is really waiting on you.
+# Claude Code writes the returned terminalSequence to the terminal itself.
+$in = [Console]::In.ReadToEnd() | ConvertFrom-Json
+if ($in.hook_event_name -eq 'UserPromptSubmit') { exit 0 }
+
+switch ($in.hook_event_name) {
+    'Stop' {
+        # Agent-type work or a one-shot wakeup will resume the turn: not waiting on you.
+        # Shell/monitor tasks and recurring crons may never end (dev server, /loop), so they don't suppress.
+        $agents = @($in.background_tasks | Where-Object { $_.type -match 'subagent|workflow|teammate|cloud session|MCP task' })
+        $wakeups = @($in.session_crons | Where-Object { -not $_.recurring })
+        if ($agents.Count + $wakeups.Count -gt 0) { exit 0 }
+        $what = 'Cevabını bekliyor'; $body = $in.last_assistant_message
+    }
+    'PreToolUse' { $what = 'Soru soruyor'; $body = $in.tool_input.questions[0].question }
+    default { $what = 'İzin bekliyor'; $body = $in.message }
+}
+
+$title = "Claude · $(Split-Path -Leaf $in.cwd) — $what"
+$body = ("$body" -replace '[\x00-\x1f]', ' ')
+if ($body.Length -gt 140) { $body = $body.Substring(0, 140) }
+
+$e = [char]27; $bel = [char]7
+@{ terminalSequence = "$e]9;${title}: $body$bel$bel" } | ConvertTo-Json -Compress
+
+$wav = Join-Path $HOME '.claude/notify.wav'
+if (Test-Path $wav) { (New-Object Media.SoundPlayer $wav).PlaySync() }
