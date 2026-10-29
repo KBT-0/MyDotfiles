@@ -40,7 +40,7 @@ install_homebrew() {
 install_base_packages() {
     echo "==> Installing base packages..."
     brew update
-    brew install chezmoi git zsh oh-my-posh lf jq
+    brew install chezmoi git zsh oh-my-posh lf jq terminal-notifier
 }
 
 apply_dotfiles() {

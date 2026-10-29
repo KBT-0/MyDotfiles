@@ -304,6 +304,14 @@ when Claude is really waiting on you:
   links to `~/.claude/notify.wav`. The popup never moves focus to the terminal
   (no `a=focus`): it pulled you out of another workspace. Each session reuses one
   notification, which closes when you send your next message.
+- macOS Terminal (Apple Terminal) ignores these escape sequences, so the hook posts to
+  Notification Center with `terminal-notifier` (installed by `bootstrap-macos.sh`).
+  No popup and no sound while Terminal is in front showing that session's tab; another
+  tab, window or app gets both. A click brings Terminal forward on that session's tab.
+  Each session reuses one notification, which closes when you send your next message.
+  Without `terminal-notifier` the hook falls back to `osascript`: the popup still shows,
+  but a click opens Script Editor. First use asks for notification permission and for
+  permission to control Terminal.
 - Hyprland: `Super+N` invokes the latest notification while its popup is still on screen.
 - Noctalia: a notification filter (`[notification.filter.claude]`, `play_sound = false`)
   keeps Noctalia from playing its own sound on top of Claude's; every other app's
@@ -315,7 +323,7 @@ when Claude is really waiting on you:
 - Phone push notifications over Remote Control (`inputNeededNotifEnabled`,
   `agentPushNotifEnabled`) stay on; they are separate from these.
 
-Linux/macOS/WSL run `~/.claude/notify.sh` (`bash`, `jq`); Windows runs
+Linux/macOS/WSL run `~/.claude/notify.sh` (`bash`, `jq`; macOS Terminal also `terminal-notifier`); Windows runs
 `~/.claude/notify.ps1`. None of it adds tokens: the hooks print nothing into
 Claude's context.
 
